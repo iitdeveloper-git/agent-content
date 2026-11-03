@@ -46,10 +46,10 @@ jobs:
 
       - name: Run verification checks
         run: |
+          pnpm run build
           pnpm run typecheck
           pnpm run lint
           pnpm run test:coverage
-          pnpm run build
 
       - name: Validate external consumer from packed tarballs
         run: node scripts/verify-tarballs.mjs
