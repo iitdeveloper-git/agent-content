@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import picocolors from 'picocolors';
 import {
@@ -230,6 +230,7 @@ export function createCli(): Command {
         });
 
         const outDir = resolve(process.cwd(), opts.outDir);
+        mkdirSync(outDir, { recursive: true });
         const llmsTxtPath = resolve(outDir, 'llms.txt');
         const llmsFullTxtPath = resolve(outDir, 'llms-full.txt');
 

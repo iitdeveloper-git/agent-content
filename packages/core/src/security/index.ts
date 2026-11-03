@@ -314,7 +314,7 @@ export function validateUrlForSSRF(
 
 /**
  * Resolves a hostname via DNS and verifies that all resolved IP addresses are public.
- * Protects against DNS rebinding and public-domain-to-private-IP attacks (e.g. nip.io).
+ * Protects against public-domain-to-private-IP attacks (e.g. nip.io) and fails closed on DNS lookup errors.
  */
 export async function resolveAndValidateDns(hostname: string): Promise<SSRFValidationResult> {
   const cleanHostname = hostname.replace(/\.$/, '').replace(/^\[|\]$/g, '');
@@ -339,6 +339,12 @@ export async function resolveAndValidateDns(hostname: string): Promise<SSRFValid
     const dns = await import('node:dns/promises').catch(() => null);
     if (dns) {
       const addresses = await dns.lookup(cleanHostname, { all: true });
+      if (!addresses || addresses.length === 0) {
+        return {
+          safe: false,
+          reason: `DNS resolution returned no addresses for "${cleanHostname}".`,
+        };
+      }
       for (const entry of addresses) {
         if (entry.family === 4 && isPrivateIPv4(entry.address)) {
           return {
@@ -354,8 +360,13 @@ export async function resolveAndValidateDns(hostname: string): Promise<SSRFValid
         }
       }
     }
-  } catch {
-    // If DNS resolution fails here, the network request will handle it
+  } catch (err: unknown) {
+    // Fail closed: a DNS resolution failure must not allow the request to proceed
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      safe: false,
+      reason: `DNS resolution failed for "${cleanHostname}": ${message}`,
+    };
   }
 
   return { safe: true };

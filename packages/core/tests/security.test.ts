@@ -6,6 +6,7 @@ import {
   isPathAllowed,
   isPrivateIPv4,
   isPrivateIPv6,
+  resolveAndValidateDns,
   safeFetchUrl,
   validateAndNormalizePath,
   validateUrlForSSRF,
@@ -207,6 +208,18 @@ describe('Security Controls', () => {
           allowedHosts: ['127.0.0.1'], // Even if origin was allowed
         })
       ).rejects.toThrow(SSRFError);
+    });
+
+    it('fails closed on failing DNS lookups in resolveAndValidateDns', async () => {
+      const result = await resolveAndValidateDns('non-existent-domain-xyz-123456789.invalid');
+      expect(result.safe).toBe(false);
+      expect(result.reason).toContain('DNS resolution failed');
+    });
+
+    it('blocks direct loopback IP in resolveAndValidateDns', async () => {
+      const result = await resolveAndValidateDns('127.0.0.1');
+      expect(result.safe).toBe(false);
+      expect(result.reason).toContain('private IPv4 address');
     });
   });
 });

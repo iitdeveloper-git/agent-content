@@ -14,7 +14,7 @@ Use the AgentContent CLI to inspect your HTML directory, extract semantic struct
 
 ```bash
 # In your static website project directory (e.g. ./public or ./dist)
-npx @iitdeveloper/cli build --dir ./public --base-url https://example.com --generate-rules
+npx @iitdeveloper/agent-content-cli build --dir ./public --base-url https://example.com --generate-rules
 ```
 
 ### What This Generates:

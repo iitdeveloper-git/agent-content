@@ -9,7 +9,7 @@ Vercel supports static sites, header configuration, and conditional header rewri
 In your build command (e.g. for Astro, Vite, 11ty, or Hugo on Vercel):
 
 ```bash
-npx @iitdeveloper/cli build --dir ./public --base-url https://example.com
+npx @iitdeveloper/agent-content-cli build --dir ./public --base-url https://example.com
 ```
 
 ---

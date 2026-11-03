@@ -71,7 +71,7 @@ add_action('template_redirect', function () {
 For high-traffic WordPress sites using static site generators or caching plugins (WP Super Cache, Simply Static), run the AgentContent CLI against the exported static directory:
 
 ```bash
-npx @iitdeveloper/cli build --dir ./wp-static-export --base-url https://my-blog.com
+npx @iitdeveloper/agent-content-cli build --dir ./wp-static-export --base-url https://my-blog.com
 ```
 This automatically produces all `.md` files and `llms.txt` without custom PHP execution.
 

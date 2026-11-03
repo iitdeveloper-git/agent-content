@@ -63,7 +63,7 @@ This site supports Accept: text/markdown content negotiation.
 ## 4. Programmatic Generation
 
 ```ts
-import { generateLlmsTxt, generateLlmsFullTxt } from '@iitdeveloper/core';
+import { generateLlmsTxt, generateLlmsFullTxt } from '@iitdeveloper/agent-content';
 import { content } from './agent-content.config';
 
 const txt = generateLlmsTxt({

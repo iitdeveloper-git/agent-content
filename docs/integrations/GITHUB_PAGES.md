@@ -40,7 +40,7 @@ jobs:
 
       - name: Generate AgentContent Markdown & llms.txt
         run: |
-          npx @iitdeveloper/cli build --dir ./docs --base-url https://username.github.io/repo
+          npx @iitdeveloper/agent-content-cli build --dir ./docs --base-url https://username.github.io/repo
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4

@@ -30,7 +30,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile=false
+        run: pnpm install --frozen-lockfile
 
       - name: Type check
         run: pnpm run typecheck
@@ -43,3 +43,6 @@ jobs:
 
       - name: Run tests with coverage
         run: pnpm run test:coverage
+
+      - name: Validate External Consumer from Packed Tarballs
+        run: node scripts/verify-tarballs.mjs

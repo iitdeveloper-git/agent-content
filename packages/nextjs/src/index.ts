@@ -20,6 +20,64 @@ import {
 // Re-export all core functionality for single-package consumer experience
 export * from '@iitdeveloper/agent-content';
 
+export interface ShouldRewriteResult {
+  /** Whether the request should be rewritten to the AgentContent Markdown handler */
+  rewrite: boolean;
+  /** Whether Vary: Accept should be set on the response (RFC 9111 content negotiation) */
+  shouldVaryAccept: boolean;
+  /** Suggested rewritten path if rewrite is true */
+  rewritePath?: string;
+}
+
+/**
+ * Determines whether an incoming Next.js request should be rewritten to Markdown.
+ * Evaluates RFC 9111 q-values (rejects q=0), `.md` URL paths, and `?format=md` parameters.
+ *
+ * Usage in `proxy.ts` (Next 16) or `middleware.ts` (Next 14/15):
+ * ```ts
+ * import { NextResponse, type NextRequest } from 'next/server';
+ * import { shouldRewriteToMarkdown } from '@iitdeveloper/agent-content-nextjs';
+ *
+ * export default function proxy(request: NextRequest) {
+ *   const decision = shouldRewriteToMarkdown(request);
+ *   if (decision.rewrite) {
+ *     const url = request.nextUrl.clone();
+ *     url.pathname = `/api/agent-content${request.nextUrl.pathname}`;
+ *     return NextResponse.rewrite(url);
+ *   }
+ *   const response = NextResponse.next();
+ *   if (decision.shouldVaryAccept) {
+ *     response.headers.append('Vary', 'Accept');
+ *   }
+ *   return response;
+ * }
+ * ```
+ */
+export function shouldRewriteToMarkdown(
+  request: Request | { headers: Headers | { get(name: string): string | null } | Record<string, string | string[] | undefined>; url: string },
+  options?: {
+    negotiation?: NegotiationOptions;
+    apiPrefix?: string;
+  }
+): ShouldRewriteResult {
+  const urlStr = typeof request.url === 'string' ? request.url : String(request.url);
+  const decision = getRequestedFormat(urlStr, request.headers as Headers, options?.negotiation);
+  const isMarkdown = decision.format === 'markdown';
+
+  let rewritePath: string | undefined;
+  if (isMarkdown) {
+    const apiPrefix = options?.apiPrefix ?? '/api/agent-content';
+    const parsed = new URL(urlStr, 'http://localhost');
+    rewritePath = `${apiPrefix}${parsed.pathname}${parsed.search}`;
+  }
+
+  return {
+    rewrite: isMarkdown,
+    shouldVaryAccept: decision.shouldVaryAccept,
+    rewritePath,
+  };
+}
+
 export interface NextJsRouteContext {
   params?: Record<string, unknown> | Promise<Record<string, unknown>>;
 }

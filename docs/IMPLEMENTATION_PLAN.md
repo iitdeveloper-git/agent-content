@@ -14,13 +14,13 @@ AgentContent is organized as a pnpm monorepo with strict package boundaries:
 ```
 agent-content/
 ├── packages/
-│   ├── core/           # @iitdeveloper/core (Zero external framework dependencies)
-│   ├── nextjs/         # @iitdeveloper/nextjs (Next.js App Router route handlers & helpers)
-│   ├── node/           # @iitdeveloper/node (Express, Connect, vanilla Node HTTP, Web Fetch API)
-│   └── cli/            # @iitdeveloper/cli (CLI tools for init, validation, and static generation)
+│   ├── core/           # @iitdeveloper/agent-content (Zero external framework dependencies)
+│   ├── nextjs/         # @iitdeveloper/agent-content-nextjs (Next.js App Router route handlers & helpers)
+│   ├── node/           # @iitdeveloper/agent-content-node (Express, Connect, vanilla Node HTTP, Web Fetch API)
+│   └── cli/            # @iitdeveloper/agent-content-cli (CLI tools for init, validation, and static generation)
 ├── examples/
 │   ├── basic-node/           # Express/Node server demonstration
-│   ├── nextjs-app-router/    # Next.js 14/15 App Router demonstration
+│   ├── nextjs-app-router/    # Next.js 14/15/16 App Router demonstration
 │   └── structured-content/   # CMS / Structured data pipeline demonstration
 ├── tests/
 │   └── integration/    # Cross-package end-to-end integration tests
@@ -30,18 +30,18 @@ agent-content/
 ### Dependency Inversion & Isolation
 ```mermaid
 graph TD
-    CLI["@iitdeveloper/cli"] --> Core["@iitdeveloper/core"]
-    Next["@iitdeveloper/nextjs"] --> Core
-    Node["@iitdeveloper/node"] --> Core
+    CLI["@iitdeveloper/agent-content-cli"] --> Core["@iitdeveloper/agent-content"]
+    Next["@iitdeveloper/agent-content-nextjs"] --> Core
+    Node["@iitdeveloper/agent-content-node"] --> Core
     Examples["examples/*"] --> Next
     Examples --> Node
     Examples --> Core
 ```
 
-- `@iitdeveloper/core` depends only on battle-tested, lightweight parsers (`cheerio`, `turndown` or equivalent, `yaml`, `zod`). It contains zero references to Node `http`, Next.js, or Express.
-- `@iitdeveloper/nextjs` depends on `@iitdeveloper/core` and treats `next` as an optional peer dependency.
-- `@iitdeveloper/node` depends on `@iitdeveloper/core` and treats Node HTTP / Express as peer/optional dependencies.
-- `@iitdeveloper/cli` depends on `@iitdeveloper/core` and CLI utilities (`commander`, `picocolors`).
+- `@iitdeveloper/agent-content` depends only on battle-tested, lightweight parsers (`cheerio`, `turndown` or equivalent, `yaml`, `zod`). It contains zero references to Node `http`, Next.js, or Express.
+- `@iitdeveloper/agent-content-nextjs` depends on `@iitdeveloper/agent-content` and treats `next` as an optional peer dependency.
+- `@iitdeveloper/agent-content-node` depends on `@iitdeveloper/agent-content` and treats Node HTTP / Express as peer/optional dependencies.
+- `@iitdeveloper/agent-content-cli` depends on `@iitdeveloper/agent-content` and CLI utilities (`commander`, `glob`).
 
 ---
 
@@ -55,7 +55,7 @@ graph TD
 - [ ] Setup Vitest with coverage reporting.
 - [ ] Initialize `packages/core`, `packages/nextjs`, `packages/node`, `packages/cli`.
 
-### Phase 2: Core Engine (`@iitdeveloper/core`)
+### Phase 2: Core Engine (`@iitdeveloper/agent-content`)
 - [ ] **Content Negotiation Module (`src/negotiation/`)**:
   - Accept header parser with quality values (`q=0` check, wildcard handling).
   - Deterministic precedence: Query (`?format=md`) > Suffix (`/path.md`) > Header (`Accept: text/markdown`).
@@ -87,14 +87,14 @@ graph TD
 
 ### Phase 3: Framework Adapters
 
-#### 3.1 Next.js App Router Adapter (`@iitdeveloper/nextjs`)
+#### 3.1 Next.js App Router Adapter (`@iitdeveloper/agent-content-nextjs`)
 - [ ] `createAgentContentHandler(options)`:
   - Generates standard Next.js App Router `GET` and `HEAD` Route Handlers.
   - Handles `/api/agent-content/[...slug]` or root-level catch-all route handlers.
   - Integrates conditional caching, ETag checking, HEAD responses without body, and `X-Content-Type-Options: nosniff`.
 - [ ] Client / Server helpers for generating `llms.txt` and `llms-full.txt` App Router routes.
 
-#### 3.2 Node.js Adapter (`@iitdeveloper/node`)
+#### 3.2 Node.js Adapter (`@iitdeveloper/agent-content-node`)
 - [ ] `createNodeMiddleware(options)`:
   - Standard `(req, res, next)` middleware for Express, Connect, and Polka.
   - Transparently intercepts `Accept: text/markdown`, `.md`, or `?format=md`.
@@ -102,13 +102,13 @@ graph TD
 - [ ] `createFetchHandler(options)`:
   - Standard Web API `(request: Request) => Promise<Response>` for Hono, Cloudflare Workers, Fastify, Deno, Bun.
 
-### Phase 4: CLI Utility (`@iitdeveloper/cli`)
+### Phase 4: CLI Utility (`@iitdeveloper/agent-content-cli`)
 - [ ] `agent-content init`: Generates starter `agent-content.config.ts`.
 - [ ] `agent-content validate`: Validates structured content files and configuration schemas.
 - [ ] `agent-content generate-llms`: Statically writes `llms.txt` and `llms-full.txt` to output directory (e.g., `public/`).
 
 ### Phase 5: Verification, Integration Tests & Examples
-- [ ] Unit tests for all modules in `@iitdeveloper/core`.
+- [ ] Unit tests for all modules in `@iitdeveloper/agent-content`.
 - [ ] Integration tests in `tests/integration/`:
   - Browser vs Agent content negotiation.
   - `.md` suffix and `?format=md` routing.

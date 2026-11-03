@@ -11,7 +11,7 @@ Add AgentContent to your build pipeline in `package.json` or Netlify build setti
 ```json
 {
   "scripts": {
-    "build": "build-site && npx @iitdeveloper/cli build --dir ./dist --base-url https://my-site.netlify.app"
+    "build": "build-site && npx @iitdeveloper/agent-content-cli build --dir ./dist --base-url https://my-site.netlify.app"
   }
 }
 ```

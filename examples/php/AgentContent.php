@@ -35,11 +35,29 @@ class AgentContent {
             return true;
         }
 
-        // 3. HTTP Accept header
+        // 3. HTTP Accept header with RFC 9110 quality value negotiation
         $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
-        if (stripos($accept, 'text/markdown') !== false) {
-            // Check q=0
-            if (!preg_match('/text\/markdown\s*;\s*q=0(?:\.0*)?(?:,|$)/i', $accept)) {
+        if ($accept !== '') {
+            $markdownQ = 0.0;
+            $htmlQ = 0.0;
+            $parts = explode(',', $accept);
+            foreach ($parts as $part) {
+                $sub = explode(';', trim($part));
+                $type = strtolower(trim($sub[0]));
+                $q = 1.0;
+                for ($i = 1; $i < count($sub); $i++) {
+                    $param = explode('=', trim($sub[$i]), 2);
+                    if (strtolower(trim($param[0])) === 'q' && isset($param[1])) {
+                        $q = (float) trim($param[1]);
+                    }
+                }
+                if ($type === 'text/markdown' || $type === 'text/x-markdown') {
+                    $markdownQ = max($markdownQ, $q);
+                } elseif ($type === 'text/html' || $type === 'application/xhtml+xml') {
+                    $htmlQ = max($htmlQ, $q);
+                }
+            }
+            if ($markdownQ > 0.0 && $markdownQ >= $htmlQ) {
                 return true;
             }
         }

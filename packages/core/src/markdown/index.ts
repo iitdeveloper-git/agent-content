@@ -94,6 +94,28 @@ function createTurndownService(options?: HtmlToMarkdownOptions): TurndownService
 }
 
 /**
+ * Safely extracts text iteratively without call stack recursion on deeply nested nodes.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function safeExtractText(node: any): string {
+  const textPieces: string[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const textStack: any[] = [node];
+  while (textStack.length > 0) {
+    const curr = textStack.pop();
+    if (!curr) continue;
+    if (curr.type === 'text') {
+      textPieces.push(curr.data || '');
+    } else if (curr.children && Array.isArray(curr.children)) {
+      for (let i = curr.children.length - 1; i >= 0; i--) {
+        textStack.push(curr.children[i]);
+      }
+    }
+  }
+  return textPieces.join('');
+}
+
+/**
  * Caps maximum DOM depth iteratively to prevent call stack overflow in Turndown
  * when converting deeply nested hostile HTML (Security S-08).
  */
@@ -111,7 +133,9 @@ function capDomDepth($: cheerio.CheerioAPI, maxDepth = MAX_SAFE_DOM_DEPTH): void
     const item = stack.pop()!;
     const el = item.el;
     if (item.depth > maxDepth) {
-      $(el).replaceWith($(el).text());
+      const text = safeExtractText(el);
+      $(el).empty();
+      $(el).replaceWith(text);
       continue;
     }
 
@@ -124,12 +148,46 @@ function capDomDepth($: cheerio.CheerioAPI, maxDepth = MAX_SAFE_DOM_DEPTH): void
 
 /**
  * Truncates oversized tables to prevent event-loop blocking (Security S-08).
+ * Operates directly on table/tbody child node arrays for O(N) linear performance.
  */
 function capTableRows($: cheerio.CheerioAPI, maxRows = MAX_TABLE_ROWS): void {
   $('table').each((_, tableEl) => {
-    const rows = $(tableEl).find('tr');
-    if (rows.length > maxRows) {
-      rows.slice(maxRows).remove();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const containers: any[] = [];
+    const tbodies = $(tableEl).children('tbody');
+    if (tbodies.length > 0) {
+      tbodies.each((_, tb) => {
+        containers.push(tb);
+      });
+    } else {
+      containers.push(tableEl);
+    }
+
+    let totalRows = 0;
+    let truncated = false;
+    for (const container of containers) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const newChildren: any[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const child of (container.children || []) as any[]) {
+        if (child.type === 'tag' && child.name === 'tr') {
+          totalRows++;
+          if (totalRows <= maxRows) {
+            newChildren.push(child);
+          } else {
+            truncated = true;
+          }
+        } else {
+          newChildren.push(child);
+        }
+      }
+      if (newChildren.length > 0) {
+        newChildren[newChildren.length - 1].next = null;
+      }
+      container.children = newChildren;
+    }
+
+    if (truncated) {
       $(tableEl).after(`\n\n*Note: Table truncated (showing first ${maxRows} rows).*\n\n`);
     }
   });

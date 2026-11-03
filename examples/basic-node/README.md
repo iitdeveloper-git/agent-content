@@ -1,6 +1,6 @@
 # Basic Node.js Integration Example
 
-Demonstrates integrating `@iitdeveloper/node` and `@iitdeveloper/core` with a standard Node.js HTTP or Express server.
+Demonstrates integrating `@iitdeveloper/agent-content-node` and `@iitdeveloper/agent-content` with a standard Node.js HTTP or Express server.
 
 ## Features Shown
 - Content negotiation via `Accept: text/markdown`

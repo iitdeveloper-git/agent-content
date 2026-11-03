@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createAgentContentHandler,
   createLlmsTxtHandler,
+  shouldRewriteToMarkdown,
 } from '../src/index.js';
 
 describe('Next.js App Router Adapter', () => {
@@ -195,5 +196,55 @@ describe('Next.js App Router Adapter', () => {
     const text = await res.text();
     expect(text).toContain('# Next.js App with AgentContent');
     expect(text).toContain('- [About Next.js App](https://example.com/about)');
+  });
+
+  describe('shouldRewriteToMarkdown helper (proxy & middleware)', () => {
+    it('rewrites when Accept: text/markdown is present', () => {
+      const req = new Request('https://example.com/about', {
+        headers: { Accept: 'text/markdown' },
+      });
+      const result = shouldRewriteToMarkdown(req);
+      expect(result.rewrite).toBe(true);
+      expect(result.shouldVaryAccept).toBe(true);
+      expect(result.rewritePath).toBe('/api/agent-content/about');
+    });
+
+    it('does NOT rewrite when q=0 rejects markdown (fixes q=0 bug)', () => {
+      const req = new Request('https://example.com/about', {
+        headers: { Accept: 'text/markdown;q=0, text/html' },
+      });
+      const result = shouldRewriteToMarkdown(req);
+      expect(result.rewrite).toBe(false);
+      expect(result.shouldVaryAccept).toBe(true);
+    });
+
+    it('rewrites when ?format=md query parameter is present', () => {
+      const req = new Request('https://example.com/about?format=md', {
+        headers: { Accept: 'text/html' },
+      });
+      const result = shouldRewriteToMarkdown(req);
+      expect(result.rewrite).toBe(true);
+      expect(result.shouldVaryAccept).toBe(false);
+      expect(result.rewritePath).toBe('/api/agent-content/about?format=md');
+    });
+
+    it('rewrites when .md extension is requested', () => {
+      const req = new Request('https://example.com/about.md', {
+        headers: { Accept: '*/*' },
+      });
+      const result = shouldRewriteToMarkdown(req);
+      expect(result.rewrite).toBe(true);
+      expect(result.shouldVaryAccept).toBe(false);
+      expect(result.rewritePath).toBe('/api/agent-content/about.md');
+    });
+
+    it('does not rewrite standard HTML request but emits shouldVaryAccept: true', () => {
+      const req = new Request('https://example.com/about', {
+        headers: { Accept: 'text/html,application/xhtml+xml' },
+      });
+      const result = shouldRewriteToMarkdown(req);
+      expect(result.rewrite).toBe(false);
+      expect(result.shouldVaryAccept).toBe(true);
+    });
   });
 });

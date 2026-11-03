@@ -1,6 +1,6 @@
 # Next.js App Router Integration Example
 
-Demonstrates how to integrate `@iitdeveloper/nextjs` into a Next.js 14 or 15 application using App Router Route Handlers.
+Demonstrates how to integrate `@iitdeveloper/agent-content-nextjs` into a Next.js 14, 15, or 16 application using App Router Route Handlers.
 
 ## Folder Structure
 ```
@@ -15,7 +15,7 @@ app/
 
 ```ts
 // app/api/agent-content/[...slug]/route.ts
-import { createAgentContentHandler } from '@iitdeveloper/nextjs';
+import { createAgentContentHandler } from '@iitdeveloper/agent-content-nextjs';
 import { agentContent } from '@/agent-content.config';
 
 export const { GET, HEAD } = createAgentContentHandler({

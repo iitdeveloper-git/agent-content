@@ -5,15 +5,15 @@ Strategic development milestones for the AgentContent ecosystem.
 ---
 
 ## Current Release: v0.1.0 (Foundation & Core Release)
-- [x] Pure TypeScript framework-agnostic core (`@iitdeveloper/core`).
+- [x] Pure TypeScript framework-agnostic core (`@iitdeveloper/agent-content`).
 - [x] RFC 9110 content negotiation (`Accept: text/markdown`, `.md`, `?format=md`).
 - [x] High-performance HTML-to-Markdown engine with automated clutter removal.
 - [x] Structured Content API with Zod validation.
 - [x] Deterministic `llms.txt` and `llms-full.txt` discovery generators.
 - [x] HTTP representation caching with representation-specific ETags (`W/"md-..."`).
-- [x] Next.js App Router route handlers (`@iitdeveloper/nextjs`).
-- [x] Node.js, Express, and Web Fetch adapters (`@iitdeveloper/node`).
-- [x] Static Website CLI (`@iitdeveloper/cli`).
+- [x] Next.js App Router route handlers (`@iitdeveloper/agent-content-nextjs`).
+- [x] Node.js, Express, and Web Fetch adapters (`@iitdeveloper/agent-content-node`).
+- [x] Static Website CLI (`@iitdeveloper/agent-content-cli`).
 - [x] Universal integration guides (Vanilla HTML, Netlify, Vercel, GitHub Pages, Nginx, Apache, PHP).
 - [x] Security controls (Path traversal, SSRF defense, payload limits).
 - [x] Monorepo CI/CD workflows and automated tests.

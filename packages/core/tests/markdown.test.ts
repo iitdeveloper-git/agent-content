@@ -122,9 +122,9 @@ console.log(x);</code></pre>
   });
 
   it('handles deeply nested hostile elements without call stack overflow (S-08)', () => {
-    // 2,000 nested divs
+    // 5,000 nested divs to verify iterative traversal and safe text extraction
     let deepHtml = 'Content at the bottom';
-    for (let i = 0; i < 2000; i++) {
+    for (let i = 0; i < 5000; i++) {
       deepHtml = `<div>${deepHtml}</div>`;
     }
     expect(() => htmlToMarkdown(deepHtml)).not.toThrow();

@@ -48,23 +48,23 @@ flowchart TD
 ```
 agent-content/
 ├── packages/
-│   ├── core/           # @iitdeveloper/core
+│   ├── core/           # @iitdeveloper/agent-content
 │   │                   # Pure framework-agnostic TypeScript engine.
 │   │                   # Zero framework dependencies.
 │   │
-│   ├── nextjs/         # @iitdeveloper/nextjs
-│   │                   # Next.js 14 & 15 App Router route handlers.
+│   ├── nextjs/         # @iitdeveloper/agent-content-nextjs
+│   │                   # Next.js 14, 15 & 16 App Router route handlers and proxy helpers.
 │   │
-│   ├── node/           # @iitdeveloper/node
+│   ├── node/           # @iitdeveloper/agent-content-node
 │   │                   # Express, Connect, and Web Fetch API adapters.
 │   │
-│   └── cli/            # @iitdeveloper/cli
+│   └── cli/            # @iitdeveloper/agent-content-cli
 │                       # Project initialization, validation, and static generation.
 ```
 
 ### Dependency Inversion & Isolation
-- `@iitdeveloper/core` has **zero** runtime dependencies on Next.js, React, Express, or Node-specific HTTP servers. It uses Web Standard primitives (`Request`, `Response`, `Headers`, `URL`, crypto).
-- Framework adapters (`@iitdeveloper/nextjs`, `@iitdeveloper/node`) wrap `@iitdeveloper/core` functions without introducing foreign domain logic.
+- `@iitdeveloper/agent-content` (Core) has **zero** runtime dependencies on Next.js, React, Express, or Node-specific HTTP servers. It uses Web Standard primitives (`Request`, `Response`, `Headers`, `URL`, crypto).
+- Framework adapters (`@iitdeveloper/agent-content-nextjs`, `@iitdeveloper/agent-content-node`) wrap `@iitdeveloper/agent-content` functions and re-export core capabilities without introducing foreign domain logic.
 - AgentContent is 100% decoupled from Growixa. Growixa may consume AgentContent, but AgentContent contains zero proprietary commercial dependencies.
 
 ---

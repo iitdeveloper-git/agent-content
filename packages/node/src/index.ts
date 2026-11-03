@@ -378,3 +378,8 @@ export function createFetchHandler(options: NodeHandlerOptions) {
     });
   };
 }
+
+/**
+ * Convenient alias for `createNodeMiddleware`.
+ */
+export const agentContent = createNodeMiddleware;

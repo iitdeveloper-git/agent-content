@@ -1,5 +1,7 @@
 # AgentContent v0.1.0 — Independent Release Gate Review (Final Report)
 
+> **Status update (2026-11-03, after fixes and package rename):** this document is the *first-pass* record (package names in it, e.g. `@iitdeveloper/core`, are the pre-rename names). The re-review of `main@fd9c4eb` is in [RE_REVIEW_PACKAGE_RENAME.md](RE_REVIEW_PACKAGE_RENAME.md): verdict **APPROVED WITH CONDITIONS**; P0 and most P1/P2 findings are fixed and re-verified.
+
 - **Reviewer role:** Independent Principal Architect / Security Reviewer (review-only; no implementation files modified)
 - **Date:** 2026-11-03
 - **Environment:** macOS (Darwin 24.3, arm64), Node v22.20.0, pnpm 12.16.1, npm (registry reachable), PHP (Homebrew), Next.js 15.5.28 and 16.4.4

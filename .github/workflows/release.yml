@@ -4,11 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       version_bump:
-        description: 'Version bump level (patch, minor, major)'
+        description: 'Version bump level (none, patch, minor, major)'
         required: true
-        default: 'patch'
+        default: 'none'
         type: choice
         options:
+          - none
           - patch
           - minor
           - major
@@ -36,7 +37,12 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile=false
+        run: pnpm install --frozen-lockfile
+
+      - name: Bump package versions
+        if: "${{ github.event.inputs.version_bump != 'none' }}"
+        run: |
+          pnpm --recursive --filter "./packages/*" exec npm version ${{ github.event.inputs.version_bump }} --no-git-tag-version
 
       - name: Run verification checks
         run: |

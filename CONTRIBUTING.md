@@ -49,7 +49,7 @@ pnpm test
 ## Contribution Guidelines
 
 1. **Architecture Boundaries:**
-   - `@iitdeveloper/core` must **never** import framework-specific packages (Next.js, Express, React).
+   - `@iitdeveloper/agent-content` (Core) must **never** import framework-specific packages (Next.js, Express, React).
    - AgentContent must **never** depend on Growixa or any proprietary commercial platform.
 2. **Strict TypeScript:**
    - No `any` types unless strictly necessary and documented with an architectural rationale.

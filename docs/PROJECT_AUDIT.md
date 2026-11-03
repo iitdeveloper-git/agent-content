@@ -47,10 +47,10 @@ Prior to this audit, the repository contained:
 - **Module Format:** Dual ESM/CJS or pure modern ESM with explicit exports maps in `package.json`. Given modern Next.js and Node 18+ ecosystem standards, modern dual exports or TypeScript transpilation to ESM + CJS declaration maps ensure maximum interoperability.
 
 ### 4.2 Next.js Integration Compatibility
-- **Target Versions:** Next.js 14.x and 15.x.
-- **Architectural Boundary:** The Next.js integration (`@iitdeveloper/nextjs`) must focus on App Router **Route Handlers** (`app/**/route.ts` with `GET` and `HEAD` exports).
+- **Target Versions:** Next.js 14.x, 15.x, and 16.x.
+- **Architectural Boundary:** The Next.js integration (`@iitdeveloper/agent-content-nextjs`) must focus on App Router **Route Handlers** (`app/**/route.ts` with `GET` and `HEAD` exports).
 - **Middleware Warning:** Avoid CPU-intensive HTML parsing or large Markdown generation inside Edge Middleware. Route Handlers run in Node.js server runtime (or Node runtime in Next.js) where full HTML parsing, caching, and streaming can execute safely without 1MB Edge bundle limits or execution timeouts.
-- **Independence:** `@iitdeveloper/core` must **never** import or depend on `next`, `react`, or `@types/react`. It remains 100% framework-agnostic.
+- **Independence:** `@iitdeveloper/agent-content` must **never** import or depend on `next`, `react`, or `@types/react`. It remains 100% framework-agnostic.
 
 ### 4.3 Node.js Web Adapters
 - Standard `http.IncomingMessage` / `http.ServerResponse` adapter for Express, Connect, and vanilla Node HTTP servers.

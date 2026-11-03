@@ -98,18 +98,22 @@ In Next.js 16, use `proxy.ts`:
 
 ```typescript
 import { NextResponse, type NextRequest } from 'next/server';
+import { shouldRewriteToMarkdown } from '@iitdeveloper/agent-content-nextjs';
 
 export default function proxy(request: NextRequest) {
-  const accept = request.headers.get('accept') || '';
-  const pathname = request.nextUrl.pathname;
+  const decision = shouldRewriteToMarkdown(request);
 
-  if (accept.includes('text/markdown') || pathname.endsWith('.md')) {
+  if (decision.rewrite) {
     const url = request.nextUrl.clone();
-    url.pathname = `/api/agent-content${pathname}`;
+    url.pathname = `/api/agent-content${request.nextUrl.pathname}`;
     return NextResponse.rewrite(url);
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  if (decision.shouldVaryAccept) {
+    response.headers.append('Vary', 'Accept');
+  }
+  return response;
 }
 ```
 
@@ -119,18 +123,22 @@ In `middleware.ts`:
 
 ```typescript
 import { NextResponse, type NextRequest } from 'next/server';
+import { shouldRewriteToMarkdown } from '@iitdeveloper/agent-content-nextjs';
 
 export function middleware(request: NextRequest) {
-  const accept = request.headers.get('accept') || '';
-  const pathname = request.nextUrl.pathname;
+  const decision = shouldRewriteToMarkdown(request);
 
-  if (accept.includes('text/markdown') || pathname.endsWith('.md')) {
+  if (decision.rewrite) {
     const url = request.nextUrl.clone();
-    url.pathname = `/api/agent-content${pathname}`;
+    url.pathname = `/api/agent-content${request.nextUrl.pathname}`;
     return NextResponse.rewrite(url);
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  if (decision.shouldVaryAccept) {
+    response.headers.append('Vary', 'Accept');
+  }
+  return response;
 }
 
 export const config = {

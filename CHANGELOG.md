@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - YAML frontmatter parser and serializer for structured Markdown pages.
   - RFC-compliant, injection-proof `llms.txt` and `llms-full.txt` discovery generators with deterministic sorting.
   - HTTP representation caching with representation-specific ETags (`W/"md-..."`), conditional GET (`If-None-Match`, `If-Modified-Since`), and dynamic `Vary: Accept` emission.
-  - Enterprise SSRF defense: full IANA IPv4 and IPv6 special-purpose ranges, cloud metadata protection, loopback and trailing-dot FQDN protection, DNS resolution to prevent rebinding, and hop-by-hop redirect validation.
+  - Enterprise SSRF defense: full IANA IPv4 and IPv6 special-purpose ranges, cloud metadata protection, loopback and trailing-dot FQDN protection, DNS resolution to detect private IP hostnames, and hop-by-hop redirect validation.
 - **Next.js Adapter (`@iitdeveloper/agent-content-nextjs`)**:
   - Single-package installation with full core functionality re-exported.
   - App Router route handlers (`GET`, `HEAD`) supporting Next.js 14, 15, and 16.

@@ -147,4 +147,29 @@ describe('CLI & Static Website Inspector', () => {
     const currentHtaccess = readFileSync(join(tempSiteDir, '.htaccess'), 'utf8');
     expect(currentHtaccess).toBe(originalHtaccess);
   });
+
+  it('generates llms.txt and creates output directory when it does not exist', () => {
+    const cli = createCli();
+    const configPath = join(tempSiteDir, 'agent-content.config.json');
+    writeFileSync(
+      configPath,
+      JSON.stringify({
+        site: { name: 'Test Site', url: 'https://example.com' },
+        pages: [{ url: '/', title: 'Home', content: '# Home Page' }],
+      }),
+      'utf8'
+    );
+
+    const nonExistentOutDir = join(tempSiteDir, 'nested', 'public');
+    expect(existsSync(nonExistentOutDir)).toBe(false);
+
+    // Run generate-llms with non-existent out-dir
+    cli.parse(['node', 'agent-content', 'generate-llms', '-c', configPath, '-o', nonExistentOutDir]);
+
+    expect(existsSync(nonExistentOutDir)).toBe(true);
+    expect(existsSync(join(nonExistentOutDir, 'llms.txt'))).toBe(true);
+    expect(existsSync(join(nonExistentOutDir, 'llms-full.txt'))).toBe(true);
+    const content = readFileSync(join(nonExistentOutDir, 'llms.txt'), 'utf8');
+    expect(content).toContain('# Test Site');
+  });
 });

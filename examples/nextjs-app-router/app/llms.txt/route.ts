@@ -1,4 +1,4 @@
-import { createLlmsTxtHandler } from '@iitdeveloper/nextjs';
+import { createLlmsTxtHandler } from '@iitdeveloper/agent-content-nextjs';
 import { agentContent } from '../../agent-content.config.js';
 
 export const { GET, HEAD } = createLlmsTxtHandler(agentContent);
