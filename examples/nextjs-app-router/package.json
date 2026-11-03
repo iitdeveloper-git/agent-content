@@ -1,0 +1,11 @@
+{
+  "name": "example-nextjs-app-router",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@iitdeveloper/agent-content-nextjs": "workspace:*"
+  }
+}

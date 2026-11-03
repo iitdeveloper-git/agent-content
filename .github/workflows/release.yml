@@ -1,0 +1,52 @@
+name: Release Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump level (patch, minor, major)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  publish:
+    name: Build & Publish to npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Run verification checks
+        run: |
+          pnpm run typecheck
+          pnpm run lint
+          pnpm run test:coverage
+          pnpm run build
+
+      - name: Publish to npm (@iitdeveloper scope) with Provenance
+        run: |
+          pnpm --recursive --filter "./packages/*" publish --access public --provenance --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

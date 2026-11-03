@@ -1,0 +1,126 @@
+{
+  "name": "@iitdeveloper/agent-content",
+  "version": "0.1.0",
+  "description": "Make every website readable by AI agents — HTTP Markdown content negotiation, structured registry, HTML-to-Markdown conversion, and llms.txt discovery.",
+  "license": "Apache-2.0",
+  "author": "IITDEVELOPER",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iitdeveloper-git/agent-content.git",
+    "directory": "packages/core"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./negotiation": {
+      "import": {
+        "types": "./dist/negotiation/index.d.ts",
+        "default": "./dist/negotiation/index.js"
+      },
+      "require": {
+        "types": "./dist/negotiation/index.d.cts",
+        "default": "./dist/negotiation/index.cjs"
+      }
+    },
+    "./markdown": {
+      "import": {
+        "types": "./dist/markdown/index.d.ts",
+        "default": "./dist/markdown/index.js"
+      },
+      "require": {
+        "types": "./dist/markdown/index.d.cts",
+        "default": "./dist/markdown/index.cjs"
+      }
+    },
+    "./content": {
+      "import": {
+        "types": "./dist/content/index.d.ts",
+        "default": "./dist/content/index.js"
+      },
+      "require": {
+        "types": "./dist/content/index.d.cts",
+        "default": "./dist/content/index.cjs"
+      }
+    },
+    "./metadata": {
+      "import": {
+        "types": "./dist/metadata/index.d.ts",
+        "default": "./dist/metadata/index.js"
+      },
+      "require": {
+        "types": "./dist/metadata/index.d.cts",
+        "default": "./dist/metadata/index.cjs"
+      }
+    },
+    "./discovery": {
+      "import": {
+        "types": "./dist/discovery/index.d.ts",
+        "default": "./dist/discovery/index.js"
+      },
+      "require": {
+        "types": "./dist/discovery/index.d.cts",
+        "default": "./dist/discovery/index.cjs"
+      }
+    },
+    "./cache": {
+      "import": {
+        "types": "./dist/cache/index.d.ts",
+        "default": "./dist/cache/index.js"
+      },
+      "require": {
+        "types": "./dist/cache/index.d.cts",
+        "default": "./dist/cache/index.cjs"
+      }
+    },
+    "./security": {
+      "import": {
+        "types": "./dist/security/index.d.ts",
+        "default": "./dist/security/index.js"
+      },
+      "require": {
+        "types": "./dist/security/index.d.cts",
+        "default": "./dist/security/index.cjs"
+      }
+    },
+    "./types": {
+      "import": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/types/index.js"
+      },
+      "require": {
+        "types": "./dist/types/index.d.cts",
+        "default": "./dist/types/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "turndown": "^7.2.0",
+    "yaml": "^2.7.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/turndown": "^5.0.6"
+  }
+}
