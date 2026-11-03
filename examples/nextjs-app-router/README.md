@@ -5,7 +5,7 @@ Demonstrates how to integrate `@iitdeveloper/agent-content-nextjs` into a Next.j
 ## Folder Structure
 ```
 app/
-├── api/agent-content/[...slug]/
+├── api/agent-content/[[...slug]]/
 │   └── route.ts         # Handles Markdown requests, ?format=md, and conditional caching
 └── llms.txt/
     └── route.ts         # Exposes standard /llms.txt discovery file
@@ -14,7 +14,7 @@ app/
 ## Setup & Usage
 
 ```ts
-// app/api/agent-content/[...slug]/route.ts
+// app/api/agent-content/[[...slug]]/route.ts
 import { createAgentContentHandler } from '@iitdeveloper/agent-content-nextjs';
 import { agentContent } from '@/agent-content.config';
 

@@ -79,3 +79,31 @@ jobs:
 
       - name: Build and run a real Next.js ${{ matrix.next }} app from the packed tarballs
         run: NEXT_VERSION=${{ matrix.next }} node scripts/verify-nextjs.mjs
+
+  example:
+    name: Single Source of Truth example (build + HTTP smoke test)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 12.16.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm run build
+
+      - name: Build and serve examples/single-source-of-truth from the packed tarballs
+        run: node scripts/verify-example.mjs

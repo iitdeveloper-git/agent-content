@@ -106,10 +106,18 @@ export function appendVaryHeader(existingVary: string | null | undefined, field:
 
 /**
  * Strips `.md` extension from a URL path, preserving leading slash and clean canonical form.
+ *
+ * Following the static-hosting convention, an explicit `index.md` addresses its directory:
+ * `/index.md` -> `/` and `/docs/index.md` -> `/docs`. This only applies when the `.md` suffix is
+ * present, so a request for `/docs/index` (no suffix) is left untouched.
  */
 export function stripMarkdownExtension(pathname: string): string {
   if (!pathname) return '/';
-  const clean = pathname.replace(/\.md$/i, '');
+  const hadExtension = /\.md$/i.test(pathname);
+  let clean = pathname.replace(/\.md$/i, '');
+  if (hadExtension) {
+    clean = clean.replace(/(^|\/)index$/, '');
+  }
   return clean === '' ? '/' : clean;
 }
 

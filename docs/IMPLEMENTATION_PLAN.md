@@ -90,7 +90,7 @@ graph TD
 #### 3.1 Next.js App Router Adapter (`@iitdeveloper/agent-content-nextjs`)
 - [ ] `createAgentContentHandler(options)`:
   - Generates standard Next.js App Router `GET` and `HEAD` Route Handlers.
-  - Handles `/api/agent-content/[...slug]` or root-level catch-all route handlers.
+  - Handles `/api/agent-content/[[...slug]]` or root-level catch-all route handlers.
   - Integrates conditional caching, ETag checking, HEAD responses without body, and `X-Content-Type-Options: nosniff`.
 - [ ] Client / Server helpers for generating `llms.txt` and `llms-full.txt` App Router routes.
 

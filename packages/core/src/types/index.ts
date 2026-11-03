@@ -79,6 +79,10 @@ export interface StructuredRenderOptions {
   /**
    * Emit `StructuredPage.metadata` as a single nested `metadata:` key in the YAML frontmatter
    * (default: false).
+   *
+   * SECURITY: this PUBLISHES the metadata of every published page verbatim. Never store secrets,
+   * internal notes, private customer information or confidential data in `metadata`; draft
+   * filtering does not protect metadata that sits on a published page.
    */
   includeMetadata?: boolean;
   /**

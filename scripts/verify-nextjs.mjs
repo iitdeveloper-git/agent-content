@@ -80,6 +80,7 @@ try {
 export const agentContent = defineAgentContent({
   site: { name: 'Acme', url: 'http://localhost:${PORT}' },
   pages: [
+    { url: '/', title: 'Home', content: '# Home\\n\\nRoot page markdown.', status: 'published', updatedAt: '2026-11-01' },
     { url: '/about', title: 'About', content: '# About\\n\\nStructured about page.', status: 'published', updatedAt: '2026-11-01' },
     { url: '/secret', title: 'Secret', content: 'draft', status: 'draft' },
   ],
@@ -90,7 +91,7 @@ export const agentContent = defineAgentContent({
   write(join(app, 'app/page.tsx'), `export default function P(){return <main><h1>Home</h1></main>}\n`);
   write(join(app, 'app/about/page.tsx'), `export default function P(){return <main><h1>About HTML</h1></main>}\n`);
   write(
-    join(app, 'app/api/agent-content/[...slug]/route.ts'),
+    join(app, 'app/api/agent-content/[[...slug]]/route.ts'),
     `import { createAgentContentHandler } from '@iitdeveloper/agent-content-nextjs';
 import { agentContent } from '@/agent-content.config';
 export const { GET, HEAD } = createAgentContentHandler({ content: agentContent });
@@ -161,11 +162,48 @@ export default function proxy(request: NextRequest) {
   res = await get('/about', { accept: 'text/markdown;q=0, text/html' });
   assert(res.status === 200 && (res.headers.get('content-type') ?? '').startsWith('text/html'), 'Accept text/markdown;q=0 → HTML (not 404)');
 
+  res = await get('/about/index.md');
+  assert(res.status === 200 && (await res.text()).includes('# About'), '/about/index.md → Markdown of /about');
+
+  // Root page (regression: a required [...slug] catch-all never matched /api/agent-content)
+  res = await get('/', { accept: 'text/markdown' });
+  assert(res.status === 200 && (res.headers.get('content-type') ?? '').startsWith('text/markdown'), 'ROOT: Accept: text/markdown → Markdown');
+  assert((res.headers.get('vary') ?? '').toLowerCase().includes('accept'), 'ROOT: Markdown response carries Vary: Accept');
+  assert((await res.text()).includes('Root page markdown.'), 'ROOT: Markdown body comes from the registry');
+
+  res = await get('/?format=md');
+  assert(res.status === 200 && (res.headers.get('content-type') ?? '').startsWith('text/markdown'), 'ROOT: /?format=md → Markdown');
+
+  res = await get('/index.md');
+  assert(res.status === 200 && (res.headers.get('content-type') ?? '').startsWith('text/markdown'), 'ROOT: /index.md → Markdown');
+  assert((await res.text()).includes('Root page markdown.'), 'ROOT: /index.md serves the root page body');
+
+  res = await get('/.md');
+  assert(res.status === 200 && (res.headers.get('content-type') ?? '').startsWith('text/markdown'), 'ROOT: /.md → Markdown');
+
+  res = await get('/', { accept: 'text/html,application/xhtml+xml,*/*;q=0.8' });
+  assert(res.status === 200 && (res.headers.get('content-type') ?? '').startsWith('text/html'), 'ROOT: browser Accept → HTML');
+  assert((await res.text()).includes('<h1>Home</h1>'), 'ROOT: browser HTML is the React page');
+
+  res = await get('/');
+  assert((res.headers.get('content-type') ?? '').startsWith('text/html'), 'ROOT: no Accept header → HTML');
+
+  res = await get('/', { accept: 'text/markdown;q=0, text/html' });
+  assert(res.status === 200 && (res.headers.get('content-type') ?? '').startsWith('text/html'), 'ROOT: Accept text/markdown;q=0 → HTML');
+
   res = await get('/secret.md');
   assert(res.status === 404, 'Draft page is not exposed (404)');
 
+  res = await get('/secret/index.md');
+  assert(res.status === 404, 'Draft page is not exposed via /secret/index.md (404)');
+
+  res = await get('/secret', { accept: 'text/markdown' });
+  assert(res.status === 404 && !(await res.text()).includes('draft'), 'Draft page is not exposed via Accept (404)');
+
   res = await get('/llms.txt');
-  assert(res.status === 200 && (await res.text()).includes('# Acme'), '/llms.txt served');
+  const llmsBody = await res.text();
+  assert(res.status === 200 && llmsBody.includes('# Acme'), '/llms.txt served');
+  assert(!llmsBody.includes('Secret') && !llmsBody.includes('/secret'), '/llms.txt omits draft pages');
 
   console.log(`\n✅ Next.js ${NEXT_VERSION} consumer verification passed.\n`);
 } finally {

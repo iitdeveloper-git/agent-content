@@ -51,7 +51,9 @@ export interface NextJsRouteHandlers {
  * Creates standard Next.js App Router Route Handlers (GET, HEAD).
  * Supports Next.js 14, 15, and 16 async route params.
  *
- * Usage in `app/api/agent-content/[...slug]/route.ts`:
+ * Usage in `app/api/agent-content/[[...slug]]/route.ts` (use the OPTIONAL catch-all with double
+ * brackets: a required `[...slug]` does not match `/api/agent-content` itself, so the root page `/`
+ * could never be served as Markdown):
  * ```ts
  * import { createAgentContentHandler } from '@iitdeveloper/agent-content-nextjs';
  * import { content } from '@/agent-content.config';
@@ -73,7 +75,7 @@ export function createAgentContentHandler(options: NextJsHandlerOptions): NextJs
     const url = new URL(request.url);
     const pathname = url.pathname;
 
-    // 1. Resolve dynamic route params if mounted in Next.js App Router catch-all [...slug]
+    // 1. Resolve dynamic route params if mounted in Next.js App Router optional catch-all [[...slug]]
     let dynamicSlugPath: string | null = null;
     if (context && typeof context === 'object' && 'params' in context) {
       const rawParams = (context as { params: unknown }).params;

@@ -52,7 +52,10 @@ export const content = defineAgentContent({
 
 ### 2. Add Catch-All Agent Route Handler
 
-Create `app/api/agent-content/[...slug]/route.ts`:
+Create `app/api/agent-content/[[...slug]]/route.ts`:
+
+> **Use the optional catch-all `[[...slug]]` (double brackets).** A required `[...slug]` does not match `/api/agent-content` itself, so the root page `/` would return 404 for `Accept: text/markdown`, `/?format=md` and `/index.md`. With `[[...slug]]`, `/`, `/index.md` and `/docs/index.md` (which resolves to `/docs`) all work.
+
 
 ```typescript
 import { createAgentContentHandler } from '@iitdeveloper/agent-content-nextjs';

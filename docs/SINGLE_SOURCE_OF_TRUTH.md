@@ -92,6 +92,10 @@ export const agentContent = defineAgentContent({
 });
 ```
 
+## 4b. Mount the route as an optional catch-all
+
+The AgentContent route must be `app/api/agent-content/[[...slug]]/route.ts` (**double brackets**). A required `[...slug]` does not match `/api/agent-content` itself, so the root page would return 404 for `Accept: text/markdown`, `/?format=md` and `/index.md`. With the optional catch-all, `/`, `/index.md` and `/docs/index.md` (resolved to `/docs`) all work.
+
 ## 5. One list of routes: `listPages({ status: 'published' })`
 
 ```tsx
@@ -154,6 +158,15 @@ defineAgentContent({
 
 ### `includeMetadata`
 
+> **Warning: this publishes `metadata` to the public.** With `render: { includeMetadata: true }`, every value in `metadata` of every **published** page is written verbatim into that page's Markdown frontmatter and served to anyone (and to every AI agent and crawler) that requests the page.
+>
+> - Never store secrets, API keys, tokens or credentials in `metadata`.
+> - Never store internal notes, private customer information or confidential operational details there.
+> - Only include information you intend to disclose publicly.
+> - Draft and private page filtering does **not** protect you here: it keeps unpublished *pages* out of public output, but it cannot know that a published page carries sensitive *metadata*. If `metadata` is also used for internal purposes, build a separate public-only object for `StructuredPage.metadata` in your mapper.
+>
+> The same applies to `structuredData` (when `includeStructuredData` is on) and to everything else on a published page.
+
 Emitted as **one nested `metadata:` key** at the end of the YAML frontmatter, so it can never collide with or duplicate reserved keys (`title`, `canonical_url`, ...).
 
 ```yaml
@@ -187,7 +200,8 @@ Appended once, after the body, as a fenced block with the info string `jsonld`:
 Both fields are validated before they are emitted. An invalid value is **omitted silently**; it never makes a request fail and never produces partial output.
 
 - Accepted: plain objects, arrays, strings, finite numbers, booleans, `null`, and `Date` (serialised as ISO-8601). Everything else (functions, symbols, `bigint`, class instances such as `Map`, `NaN`/`Infinity`, cycles) invalidates the field.
-- Limits: nesting depth 16, serialised size 64 KiB, non-empty object.
+- Limits: nesting depth 16, a non-empty object, and a size cap of **65,536 characters of compact JSON** (`JSON.stringify(value).length`, i.e. UTF-16 code units, per field). This is **not a UTF-8 byte limit**: 30,000 emoji (about 120 KB as UTF-8) fit under it.
+- The emitted Markdown can be **much larger than the cap**. Escaping writes `` ` ``, `<`, `>` and `&` as six-character `\uXXXX` sequences, so a value made of those characters grows about 6× (a 60,000-character `<` string emits roughly 360 KB), and pretty-printing adds indentation. Budget for output several times the input size, and keep the data small.
 - `structuredData` must also contain an `@type` or `@graph`. If `@context` is absent, `"@context": "https://schema.org"` is added as the first key; a caller-supplied `@context` (string or object/array) is kept.
 - The JSON is pretty-printed with `` ` ``, `<`, `>` and `&` written as `\uXXXX` escapes. The parsed value is unchanged, but the content can neither close the Markdown fence nor form HTML if someone extracts the block and inlines it.
 - Content is never emitted as raw HTML; there is no `<script>` tag.

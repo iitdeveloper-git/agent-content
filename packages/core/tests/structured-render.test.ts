@@ -153,6 +153,39 @@ describe('opt-in metadata / structuredData rendering', () => {
     }
   });
 
+  it('measures the size cap in characters of compact JSON, not UTF-8 bytes (documented limit)', () => {
+    const emitted = (value: Record<string, unknown>) =>
+      renderStructuredPageToMarkdown({ ...page, structuredData: value }, SITE.url, { includeStructuredData: true });
+
+    // 30,000 emoji = 60,000 UTF-16 units (< 65,536) but ~120,000 UTF-8 bytes: accepted.
+    const emoji = emitted({ '@type': 'X', d: '😀'.repeat(30000) });
+    expect(emoji).toContain('```jsonld');
+    expect(Buffer.byteLength(emoji)).toBeGreaterThan(65536);
+
+    // Boundary on the compact JSON length: {"@type":"X","d":"..."} has 20 characters of overhead.
+    const overhead = JSON.stringify({ '@type': 'X', d: '' }).length;
+    expect(emitted({ '@type': 'X', d: 'a'.repeat(65536 - overhead) })).toContain('```jsonld');
+    expect(emitted({ '@type': 'X', d: 'a'.repeat(65536 - overhead + 1) })).toBe(LEGACY_OUTPUT);
+  });
+
+  it('can emit far more than the cap because escaping expands characters about 6x (documented)', () => {
+    const md = renderStructuredPageToMarkdown(
+      { ...page, structuredData: { '@type': 'X', d: '<'.repeat(60000) } },
+      SITE.url,
+      { includeStructuredData: true }
+    );
+    expect(md).toContain('```jsonld');
+    expect(md).not.toContain('<');
+    expect(Buffer.byteLength(md)).toBeGreaterThan(300_000);
+  });
+
+  it('publishes metadata of published pages verbatim when includeMetadata is on (documented risk)', () => {
+    const ac = defineAgentContent({ site: SITE, pages: [{ ...page, metadata: { internalNote: 'PUBLISHED-VERBATIM' } }], render: { includeMetadata: true } });
+    expect(ac.getMarkdown('/services')).toContain('internalNote: PUBLISHED-VERBATIM');
+    const off = defineAgentContent({ site: SITE, pages: [{ ...page, metadata: { internalNote: 'PUBLISHED-VERBATIM' } }] });
+    expect(off.getMarkdown('/services')).not.toContain('PUBLISHED-VERBATIM');
+  });
+
   it('rejects excessively deep structures', () => {
     let deep: Record<string, unknown> = { '@type': 'Thing' };
     for (let i = 0; i < 40; i++) deep = { '@type': 'Thing', child: deep };

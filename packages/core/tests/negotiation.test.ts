@@ -76,6 +76,38 @@ describe('Content Negotiation', () => {
       expect(stripMarkdownExtension('/page')).toBe('/page');
       expect(stripMarkdownExtension('')).toBe('/');
     });
+
+    it('resolves an explicit index.md to its directory', () => {
+      expect(stripMarkdownExtension('/index.md')).toBe('/');
+      expect(stripMarkdownExtension('/docs/index.md')).toBe('/docs');
+      expect(stripMarkdownExtension('/.md')).toBe('/');
+      expect(stripMarkdownExtension('index.md')).toBe('/');
+    });
+
+    it('does not touch index without the .md suffix or names merely ending in "index"', () => {
+      expect(stripMarkdownExtension('/index')).toBe('/index');
+      expect(stripMarkdownExtension('/docs/index')).toBe('/docs/index');
+      expect(stripMarkdownExtension('/myindex.md')).toBe('/myindex');
+      expect(stripMarkdownExtension('/reindex.md')).toBe('/reindex');
+      expect(stripMarkdownExtension('/index/page.md')).toBe('/index/page');
+    });
+  });
+
+  describe('getRequestedFormat for the root page', () => {
+    it('maps /index.md and /.md to canonical path "/" as markdown', () => {
+      for (const path of ['/index.md', '/.md']) {
+        const r = getRequestedFormat(path);
+        expect(r.format).toBe('markdown');
+        expect(r.canonicalPath).toBe('/');
+        expect(r.shouldVaryAccept).toBe(false);
+      }
+    });
+
+    it('keeps "/" negotiable by Accept and ?format=md', () => {
+      expect(getRequestedFormat('/', { accept: 'text/markdown' }).canonicalPath).toBe('/');
+      expect(getRequestedFormat('/?format=md').format).toBe('markdown');
+      expect(getRequestedFormat('/', { accept: 'text/html' }).format).toBe('html');
+    });
   });
 
   describe('getRequestedFormat', () => {

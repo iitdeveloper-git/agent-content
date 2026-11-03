@@ -117,8 +117,11 @@ export const agentContent = defineAgentContent({
 ```
 
 #### 3. Create Route Handlers
+
+> **Use the optional catch-all `[[...slug]]` (double brackets).** A required `[...slug]` does not match `/api/agent-content` itself, so the root page `/` would return 404 for `Accept: text/markdown`, `/?format=md` and `/index.md`. With `[[...slug]]`, `/`, `/index.md` and `/docs/index.md` (which resolves to `/docs`) all work.
+
 ```ts
-// app/api/agent-content/[...slug]/route.ts
+// app/api/agent-content/[[...slug]]/route.ts
 import { createAgentContentHandler } from '@iitdeveloper/agent-content-nextjs';
 import { agentContent } from '@/agent-content.config';
 
@@ -308,6 +311,7 @@ For more details, read our [Security Architecture & Threat Model](docs/SECURITY.
 - 📡 [**HTTP Content Negotiation Specification**](docs/MARKDOWN_NEGOTIATION.md) — RFC 9110 rules, precedence, and headers.
 - 🧭 [**llms.txt & llms-full.txt Guide**](docs/LLMS_TXT.md) — Standard discovery formats for LLMs.
 - 🧬 [**Single Source of Truth**](docs/SINGLE_SOURCE_OF_TRUTH.md) — one typed content model for your pages and your Markdown.
+  - **Security:** `render: { includeMetadata: true }` publishes the `metadata` of every *published* page verbatim in its Markdown frontmatter. Never put secrets, internal notes, private customer data or confidential operational details in `metadata`; draft filtering does not protect metadata on published pages.
 - 🏎️ [**HTTP Caching & CDN Integration**](docs/CACHING.md) — ETags, 304 Not Modified, and Vary headers.
 - 🛡️ [**Security Architecture**](docs/SECURITY.md) — Threat model and defensive safeguards.
 - 🗺️ [**Product Roadmap**](docs/ROADMAP.md) — Upcoming releases (Nuxt, Astro, SvelteKit, WordPress plugin).

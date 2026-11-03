@@ -63,11 +63,16 @@ export const agentContent = defineAgentContent({
 
 Don't copy it into `agent-content.config.ts`. Keep one typed model, render your pages from it, and map it with `pages: items.map(toStructuredPage)`. See the [Single Source of Truth guide](SINGLE_SOURCE_OF_TRUTH.md) and the runnable [`examples/single-source-of-truth`](../examples/single-source-of-truth).
 
+> **Security:** `render: { includeMetadata: true }` publishes the `metadata` of every *published* page verbatim in its Markdown frontmatter. Never put secrets, internal notes, private customer data or confidential operational details in `metadata`; draft filtering does not protect metadata on published pages.
+
 ---
 
 ## 3. Integrating with Next.js (App Router)
 
-Create a catch-all route handler in `app/api/agent-content/[...slug]/route.ts`:
+Create an optional catch-all route handler in `app/api/agent-content/[[...slug]]/route.ts`:
+
+> **Use the optional catch-all `[[...slug]]` (double brackets).** A required `[...slug]` does not match `/api/agent-content` itself, so the root page `/` would return 404 for `Accept: text/markdown`, `/?format=md` and `/index.md`. With `[[...slug]]`, `/`, `/index.md` and `/docs/index.md` (which resolves to `/docs`) all work.
+
 
 ```typescript
 import { createAgentContentHandler } from '@iitdeveloper/agent-content-nextjs';

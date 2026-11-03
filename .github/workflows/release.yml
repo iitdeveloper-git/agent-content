@@ -58,6 +58,9 @@ jobs:
         run: |
           for v in 14 15 16; do NEXT_VERSION=$v node scripts/verify-nextjs.mjs; done
 
+      - name: Validate the Single Source of Truth example (build + HTTP smoke test)
+        run: node scripts/verify-example.mjs
+
       # npm >= 11.5.1 is required for OIDC trusted publishing (see docs/RELEASING.md).
       - name: Upgrade npm
         run: npm install -g npm@^11.5.1
