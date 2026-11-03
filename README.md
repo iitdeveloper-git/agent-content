@@ -307,6 +307,7 @@ For more details, read our [Security Architecture & Threat Model](docs/SECURITY.
 - ⚙️ [**Configuration Reference**](docs/CONFIGURATION.md) — Complete options for sites, pages, caching, and security.
 - 📡 [**HTTP Content Negotiation Specification**](docs/MARKDOWN_NEGOTIATION.md) — RFC 9110 rules, precedence, and headers.
 - 🧭 [**llms.txt & llms-full.txt Guide**](docs/LLMS_TXT.md) — Standard discovery formats for LLMs.
+- 🧬 [**Single Source of Truth**](docs/SINGLE_SOURCE_OF_TRUTH.md) — one typed content model for your pages and your Markdown.
 - 🏎️ [**HTTP Caching & CDN Integration**](docs/CACHING.md) — ETags, 304 Not Modified, and Vary headers.
 - 🛡️ [**Security Architecture**](docs/SECURITY.md) — Threat model and defensive safeguards.
 - 🗺️ [**Product Roadmap**](docs/ROADMAP.md) — Upcoming releases (Nuxt, Astro, SvelteKit, WordPress plugin).

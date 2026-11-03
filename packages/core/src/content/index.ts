@@ -5,7 +5,106 @@ import { stripMarkdownExtension } from '../negotiation/index.js';
 import type {
   AgentContentConfig,
   StructuredPage,
+  StructuredRenderOptions,
 } from '../types/index.js';
+
+/** Maximum nesting depth accepted for opt-in metadata / structured data. */
+const MAX_SERIALIZABLE_DEPTH = 16;
+/** Maximum serialized size (bytes of JSON) accepted for each opt-in field. */
+const MAX_SERIALIZABLE_BYTES = 64 * 1024;
+
+/**
+ * Copies a value into a plain, JSON-safe structure, or returns `undefined` if it cannot be
+ * represented safely. Accepts plain objects, arrays, strings, finite numbers, booleans, null and
+ * Dates (as ISO strings). Rejects functions, symbols, bigints, class instances, cycles,
+ * non-finite numbers, excessive depth, and `undefined` array items.
+ */
+function toJsonSafe(value: unknown, depth: number, seen: Set<object>): { ok: true; value: unknown } | { ok: false } {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') {
+    return { ok: true, value };
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? { ok: true, value } : { ok: false };
+  }
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? { ok: false } : { ok: true, value: value.toISOString() };
+  }
+  if (typeof value !== 'object' || depth > MAX_SERIALIZABLE_DEPTH || seen.has(value)) {
+    return { ok: false };
+  }
+
+  seen.add(value);
+  try {
+    if (Array.isArray(value)) {
+      const out: unknown[] = [];
+      for (const item of value) {
+        const r = toJsonSafe(item, depth + 1, seen);
+        if (!r.ok) return { ok: false };
+        out.push(r.value);
+      }
+      return { ok: true, value: out };
+    }
+
+    const proto = Object.getPrototypeOf(value);
+    if (proto !== Object.prototype && proto !== null) return { ok: false };
+
+    const out: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value)) {
+      if (item === undefined) continue;
+      const r = toJsonSafe(item, depth + 1, seen);
+      if (!r.ok) return { ok: false };
+      // defineProperty keeps a literal "__proto__" key as plain data instead of invoking the setter
+      Object.defineProperty(out, key, { value: r.value, enumerable: true, writable: true, configurable: true });
+    }
+    return { ok: true, value: out };
+  } finally {
+    seen.delete(value);
+  }
+}
+
+function sanitizeSerializable(value: unknown): Record<string, unknown> | undefined {
+  const result = toJsonSafe(value, 0, new Set());
+  if (!result.ok || typeof result.value !== 'object' || result.value === null || Array.isArray(result.value)) {
+    return undefined;
+  }
+  if (Object.keys(result.value).length === 0) return undefined;
+  if (JSON.stringify(result.value).length > MAX_SERIALIZABLE_BYTES) return undefined;
+  return result.value as Record<string, unknown>;
+}
+
+/**
+ * Validates `structuredData` as a JSON-LD node and serializes it as a fenced `jsonld` block.
+ * Returns `undefined` (the field is omitted) if the value is not a valid, JSON-safe JSON-LD object.
+ *
+ * - Requires an `@type` or an `@graph`; anything else is not a meaningful JSON-LD node.
+ * - Adds `"@context": "https://schema.org"` first when no `@context` is given.
+ * - Escapes `` ` ``, `<`, `>` and `&` as \uXXXX so the data can neither close the Markdown fence nor
+ *   form HTML if the block is later extracted and inlined; the JSON value is unchanged.
+ */
+function renderJsonLdBlock(structuredData: unknown): string | undefined {
+  const safe = sanitizeSerializable(structuredData);
+  if (!safe) return undefined;
+
+  const hasType = typeof safe['@type'] === 'string' || Array.isArray(safe['@type']);
+  const hasGraph = Array.isArray(safe['@graph']);
+  if (!hasType && !hasGraph) return undefined;
+  if ('@context' in safe) {
+    const ctx = safe['@context'];
+    if (typeof ctx !== 'string' && (typeof ctx !== 'object' || ctx === null)) return undefined;
+  }
+
+  const document: Record<string, unknown> = { '@context': 'https://schema.org' };
+  for (const [key, value] of Object.entries(safe)) {
+    Object.defineProperty(document, key, { value, enumerable: true, writable: true, configurable: true });
+  }
+
+  const json = JSON.stringify(document, null, 2)
+    .replace(/`/g, '\\u0060')
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+  return '```jsonld\n' + json + '\n```';
+}
 
 /**
  * Zod validation schema for site configuration.
@@ -89,7 +188,8 @@ export function normalizePath(rawPath: string): string {
  */
 export function renderStructuredPageToMarkdown(
   page: StructuredPage,
-  siteUrl?: string
+  siteUrl?: string,
+  options?: StructuredRenderOptions
 ): string {
   const frontmatter: Record<string, unknown> = {
     title: page.title,
@@ -121,6 +221,13 @@ export function renderStructuredPageToMarkdown(
   if (page.tags && page.tags.length > 0) frontmatter.tags = page.tags;
   if (page.category) frontmatter.category = page.category;
 
+  // Opt-in: custom metadata is nested under one key so it can never collide with (or duplicate)
+  // the reserved keys above. Unrepresentable values drop the whole field instead of failing.
+  if (options?.includeMetadata) {
+    const metadata = sanitizeSerializable(page.metadata);
+    if (metadata) frontmatter.metadata = metadata;
+  }
+
   // Build markdown body
   const parts: string[] = [];
 
@@ -136,6 +243,12 @@ export function renderStructuredPageToMarkdown(
       const headingPrefix = '#'.repeat(level);
       parts.push(`${headingPrefix} ${section.title}\n\n${section.content.trim()}`);
     }
+  }
+
+  // Opt-in: JSON-LD is appended once, as inert fenced text (never raw HTML).
+  if (options?.includeStructuredData) {
+    const jsonLd = renderJsonLdBlock(page.structuredData);
+    if (jsonLd) parts.push(jsonLd);
   }
 
   const rawBody = parts.join('\n\n');
@@ -269,7 +382,7 @@ export function defineAgentContent(config: AgentContentConfig): AgentContentInst
       if (page.status && page.status !== 'published') {
         throw new RegistryError(`Page at "${pathOrUrl}" is not published.`, 404);
       }
-      return renderStructuredPageToMarkdown(page, config.site.url);
+      return renderStructuredPageToMarkdown(page, config.site.url, config.render);
     },
     listPages(filter) {
       return registry.list(filter);

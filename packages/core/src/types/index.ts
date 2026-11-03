@@ -71,6 +71,23 @@ export interface StructuredPage {
   structuredData?: Record<string, unknown>;
 }
 
+/**
+ * Opt-in switches for the extra `StructuredPage` fields in Markdown output.
+ * Both default to `false`, which keeps the output byte-identical to earlier releases.
+ */
+export interface StructuredRenderOptions {
+  /**
+   * Emit `StructuredPage.metadata` as a single nested `metadata:` key in the YAML frontmatter
+   * (default: false).
+   */
+  includeMetadata?: boolean;
+  /**
+   * Append `StructuredPage.structuredData` as a fenced `jsonld` code block at the end of the
+   * Markdown body (default: false).
+   */
+  includeStructuredData?: boolean;
+}
+
 export interface SiteConfig {
   /** Human-readable site name */
   name: string;
@@ -188,6 +205,8 @@ export interface SecurityOptions {
 export interface AgentContentConfig {
   site: SiteConfig;
   pages?: StructuredPage[];
+  /** Opt-in rendering of `metadata` / `structuredData` in Markdown output (default: both off). */
+  render?: StructuredRenderOptions;
   negotiation?: Partial<NegotiationOptions>;
   markdown?: HtmlToMarkdownOptions;
   cache?: CacheOptions;

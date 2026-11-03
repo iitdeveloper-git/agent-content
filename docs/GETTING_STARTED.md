@@ -59,6 +59,10 @@ export const agentContent = defineAgentContent({
 });
 ```
 
+### Already have your content in a data model or React pages?
+
+Don't copy it into `agent-content.config.ts`. Keep one typed model, render your pages from it, and map it with `pages: items.map(toStructuredPage)`. See the [Single Source of Truth guide](SINGLE_SOURCE_OF_TRUTH.md) and the runnable [`examples/single-source-of-truth`](../examples/single-source-of-truth).
+
 ---
 
 ## 3. Integrating with Next.js (App Router)
