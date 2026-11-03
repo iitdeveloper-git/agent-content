@@ -98,7 +98,7 @@ In Next.js 16, use `proxy.ts`:
 
 ```typescript
 import { NextResponse, type NextRequest } from 'next/server';
-import { shouldRewriteToMarkdown } from '@iitdeveloper/agent-content-nextjs';
+import { shouldRewriteToMarkdown } from '@iitdeveloper/agent-content-nextjs/proxy';
 
 export default function proxy(request: NextRequest) {
   const decision = shouldRewriteToMarkdown(request);
@@ -109,11 +109,7 @@ export default function proxy(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  const response = NextResponse.next();
-  if (decision.shouldVaryAccept) {
-    response.headers.append('Vary', 'Accept');
-  }
-  return response;
+  return NextResponse.next();
 }
 ```
 
@@ -123,7 +119,7 @@ In `middleware.ts`:
 
 ```typescript
 import { NextResponse, type NextRequest } from 'next/server';
-import { shouldRewriteToMarkdown } from '@iitdeveloper/agent-content-nextjs';
+import { shouldRewriteToMarkdown } from '@iitdeveloper/agent-content-nextjs/proxy';
 
 export function middleware(request: NextRequest) {
   const decision = shouldRewriteToMarkdown(request);
@@ -134,11 +130,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  const response = NextResponse.next();
-  if (decision.shouldVaryAccept) {
-    response.headers.append('Vary', 'Accept');
-  }
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {

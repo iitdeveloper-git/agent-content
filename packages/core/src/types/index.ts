@@ -101,6 +101,12 @@ export interface HtmlToMarkdownOptions {
   maxInputSizeBytes?: number;
   /** Preserve table formatting using GitHub Flavored Markdown (default: true) */
   tables?: boolean;
+  /** Reject input nested deeper than this many elements before parsing (default: 512) */
+  maxNestingDepth?: number;
+  /** Reject input with more opening tags than this before parsing (default: 200000) */
+  maxElements?: number;
+  /** Truncate tables after this many rows, with a visible note (default: 500) */
+  maxTableRows?: number;
 }
 
 export interface PageMetadata {

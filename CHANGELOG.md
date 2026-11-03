@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Core Engine (`@iitdeveloper/agent-content`)**:
-  - Framework-independent and Edge-runtime safe (zero Node.js binary dependencies; pure Web Standard TS).
+  - Framework-independent (no Next.js/Express/React imports). Requires a Node.js-compatible runtime: the engine uses `node:crypto`, `Buffer` and `node:dns`/`node:http` (SSRF-safe fetch). Only the pure `@iitdeveloper/agent-content/negotiation` subpath is dependency-free and safe for the Edge runtime.
   - HTTP content negotiation parser supporting `Accept: text/markdown`, `?format=md`, and `/page.md`.
   - Quality value evaluation with RFC 9110 compliance (`q=0` exclusion, wildcard handling).
   - High-performance HTML-to-Markdown conversion engine with automated clutter removal (`<script>`, `<style>`, `<nav>`, `<footer>`, banners, tracking tags).
@@ -22,12 +22,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - YAML frontmatter parser and serializer for structured Markdown pages.
   - RFC-compliant, injection-proof `llms.txt` and `llms-full.txt` discovery generators with deterministic sorting.
   - HTTP representation caching with representation-specific ETags (`W/"md-..."`), conditional GET (`If-None-Match`, `If-Modified-Since`), and dynamic `Vary: Accept` emission.
-  - Enterprise SSRF defense: full IANA IPv4 and IPv6 special-purpose ranges, cloud metadata protection, loopback and trailing-dot FQDN protection, DNS resolution to detect private IP hostnames, and hop-by-hop redirect validation.
+  - SSRF defense in `safeFetchUrl`: IANA IPv4/IPv6 special-purpose ranges, cloud metadata hostnames/IPs, loopback and trailing-dot FQDN protection, DNS answers validated and the socket **pinned to the validated address** (no DNS-rebinding window, fails closed on resolver errors), and hop-by-hop redirect validation.
+  - Pre-parse complexity guard: linear-time rejection of inputs nested deeper than `maxNestingDepth` (default 512) or with more than `maxElements` tags (default 200,000); configurable `maxTableRows`.
+  - Depends on `zod` 4 (≥ 4.6.6) to avoid the GHSA-mrhx-c7xc-m3w5 advisory present in every zod 3.x release.
 - **Next.js Adapter (`@iitdeveloper/agent-content-nextjs`)**:
   - Single-package installation with full core functionality re-exported.
   - App Router route handlers (`GET`, `HEAD`) supporting Next.js 14, 15, and 16.
   - Support for synchronous and asynchronous route parameters (`context.params.slug`).
   - Automatic `/api/agent-content` mount prefix stripping with custom `stripPrefix` override.
+  - `@iitdeveloper/agent-content-nextjs/proxy`: dependency-free `shouldRewriteToMarkdown()` for `proxy.ts` (Next 16) / `middleware.ts` (Next 14/15). Keeps the Edge middleware bundle at ~35 kB instead of pulling in the whole engine.
+  - Known limitation: Next.js overwrites `Vary` on its own HTML responses, so same-URL negotiation behind a shared cache needs an `Accept`-aware CDN cache key (see `docs/CACHING.md`).
   - Discovery endpoint handlers for `/llms.txt` and `/llms-full.txt`.
   - Credentialed and fallback request protection (automatic `private` cache).
 - **Node.js Adapter (`@iitdeveloper/agent-content-node`)**:

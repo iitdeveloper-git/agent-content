@@ -99,7 +99,7 @@ In Next.js 16, routing rewrites are configured in `proxy.ts`:
 
 ```typescript
 import { NextResponse, type NextRequest } from 'next/server';
-import { shouldRewriteToMarkdown } from '@iitdeveloper/agent-content-nextjs';
+import { shouldRewriteToMarkdown } from '@iitdeveloper/agent-content-nextjs/proxy';
 
 export default function proxy(request: NextRequest) {
   const decision = shouldRewriteToMarkdown(request);
@@ -110,11 +110,7 @@ export default function proxy(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  const response = NextResponse.next();
-  if (decision.shouldVaryAccept) {
-    response.headers.append('Vary', 'Accept');
-  }
-  return response;
+  return NextResponse.next();
 }
 ```
 
@@ -124,7 +120,7 @@ In Next.js 14 and 15:
 
 ```typescript
 import { NextResponse, type NextRequest } from 'next/server';
-import { shouldRewriteToMarkdown } from '@iitdeveloper/agent-content-nextjs';
+import { shouldRewriteToMarkdown } from '@iitdeveloper/agent-content-nextjs/proxy';
 
 export function middleware(request: NextRequest) {
   const decision = shouldRewriteToMarkdown(request);
@@ -135,14 +131,23 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  const response = NextResponse.next();
-  if (decision.shouldVaryAccept) {
-    response.headers.append('Vary', 'Accept');
-  }
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
 ```
+
+### Why `/proxy`?
+
+Import `shouldRewriteToMarkdown` from `@iitdeveloper/agent-content-nextjs/proxy`, **not** the package root. The `/proxy` entry point depends only on the pure negotiation module, so the Edge Runtime bundle used by Next.js 14/15 `middleware.ts` stays tiny and free of `cheerio`, `turndown`, `yaml`, `zod` and Node built-ins (`node:dns`, `node:crypto`). Importing the root entry in `middleware.ts` bundles the whole engine (100+ kB) and triggers Edge-runtime warnings. Route handlers (`route.ts`) run on the Node.js runtime and import from the package root as usual.
+
+### CDN caching caveat: `Vary: Accept` on Next.js HTML pages
+
+Markdown responses produced by AgentContent send `Vary: Accept` when the format was chosen from the `Accept` header. Next.js, however, **overwrites the `Vary` header of its own HTML page responses** (it emits `Vary: rsc, next-router-state-tree, …, Accept-Encoding`); neither `proxy.ts`/`middleware.ts`, `NextResponse.next({ headers })` nor `next.config` `headers()` can add `Accept` to it (verified on Next.js 14.2, 15.5 and 16.4). If a shared cache sits in front of the app and you serve Markdown from the *same URL* via `Accept`:
+
+- include the `Accept` header in the CDN cache key for those routes (Cloudflare Cache Rules / Fastly `vcl_hash` / CloudFront cache policy / your CDN's equivalent), **or**
+- advertise and use the explicit URLs (`/page.md`, `/page?format=md`) for agents — these are keyed by URL and need no `Vary`.
+
+See [CACHING.md](CACHING.md).

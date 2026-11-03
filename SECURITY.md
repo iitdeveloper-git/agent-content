@@ -38,8 +38,8 @@ If you discover a security vulnerability or potential threat in AgentContent (su
 
 AgentContent incorporates built-in defensive protections:
 1. **Strict Path Traversal Protection:** Input path normalization rejects null bytes, directory traversal patterns (`..`), and unsafe path characters.
-2. **SSRF Guarding:** Remote URL fetching (when explicitly configured) forbids loopback (`127.0.0.0/8`, `::1`), private networks (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), and cloud metadata IP ranges (`169.254.169.254`).
+2. **SSRF Guarding:** Remote URL fetching (when explicitly configured) forbids loopback (`127.0.0.0/8`, `::1`), private networks (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), cloud metadata IP ranges (`169.254.169.254`) and hostnames, and other special-use ranges. DNS answers are validated and the connection is pinned to the validated address (no check-then-resolve gap); see `docs/SECURITY.md` for the scope and limits of this control.
 3. **Information Disclosure Prevention:** Unpublished draft pages, authenticated routes, and internal error stack traces are never exposed in public HTTP representations.
 4. **Cache Poisoning Defense:** Distinct representation ETags and explicit `Vary: Accept` prevent intermediate reverse proxies or CDNs from caching Markdown for standard HTML browser visitors.
-5. **Denial-of-Service Defense:** Maximum request and response payload size limits prevent parser memory exhaustion.
+5. **Denial-of-Service Defense:** Maximum payload size, element-count and nesting-depth limits are enforced by a linear pre-parse scan, so hostile markup is rejected before it can exhaust CPU or memory.
 

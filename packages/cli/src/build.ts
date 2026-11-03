@@ -105,7 +105,8 @@ function findHtmlFiles(dir: string, baseDir: string, userExcludes: string[]): st
   const entries = readdirSync(dir, { withFileTypes: true });
 
   // Sort deterministically
-  entries.sort((a, b) => a.name.localeCompare(b.name));
+  // Ordinal (locale-independent) ordering keeps llms.txt identical across machines and CI.
+  entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 
   for (const entry of entries) {
     const fullPath = join(dir, entry.name);

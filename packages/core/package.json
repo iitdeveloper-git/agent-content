@@ -118,9 +118,13 @@
     "cheerio": "^1.0.0",
     "turndown": "^7.2.0",
     "yaml": "^2.7.0",
-    "zod": "^3.24.2"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@types/turndown": "^5.0.6"
-  }
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "sideEffects": false
 }

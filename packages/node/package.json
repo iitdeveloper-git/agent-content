@@ -35,15 +35,25 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@iitdeveloper/agent-content": "workspace:*",
-    "@types/node": ">=18.0.0"
+    "@iitdeveloper/agent-content": "workspace:*"
   },
   "peerDependencies": {
-    "express": ">=4.18.0"
+    "express": ">=4.18.0",
+    "@types/node": ">=18.0.0"
   },
   "peerDependenciesMeta": {
     "express": {
       "optional": true
+    },
+    "@types/node": {
+      "optional": true
     }
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "sideEffects": false,
+  "devDependencies": {
+    "@types/node": "^22.13.4"
   }
 }

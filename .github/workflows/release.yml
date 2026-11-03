@@ -51,8 +51,41 @@ jobs:
           pnpm run test:coverage
           pnpm run build
 
-      - name: Publish to npm (@iitdeveloper scope) with Provenance
+      - name: Validate external consumer from packed tarballs
+        run: node scripts/verify-tarballs.mjs
+
+      - name: Validate real Next.js apps (14, 15, 16) from packed tarballs
         run: |
-          pnpm --recursive --filter "./packages/*" publish --access public --provenance --no-git-checks
+          for v in 14 15 16; do NEXT_VERSION=$v node scripts/verify-nextjs.mjs; done
+
+      # npm >= 11.5.1 is required for OIDC trusted publishing (see docs/RELEASING.md).
+      - name: Upgrade npm
+        run: npm install -g npm@^11.5.1
+
+      - name: Pack publishable tarballs (workspace:* ranges are rewritten by pnpm pack)
+        run: |
+          mkdir -p "$RUNNER_TEMP/tarballs"
+          for dir in core nextjs node cli; do
+            (cd "packages/$dir" && pnpm pack --pack-destination "$RUNNER_TEMP/tarballs")
+          done
+
+      - name: Publish to npm with provenance
+        # Uses OIDC trusted publishing once configured on npmjs.com for each package (docs/RELEASING.md).
+        # NPM_TOKEN is only the bootstrap path for the very first publish and can be removed afterwards.
+        run: |
+          for tarball in "$RUNNER_TEMP"/tarballs/*.tgz; do
+            npm publish "$tarball" --access public --provenance
+          done
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Commit version bump and tag the release
+        if: "${{ github.event.inputs.version_bump != 'none' }}"
+        run: |
+          VERSION=$(node -p "require('./packages/core/package.json').version")
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/*/package.json
+          git commit -m "chore(release): v${VERSION}"
+          git tag "v${VERSION}"
+          git push origin HEAD --follow-tags

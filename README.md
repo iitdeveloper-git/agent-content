@@ -141,7 +141,7 @@ In Next.js 16 (`proxy.ts`) or Next.js 14/15 (`middleware.ts`):
 
 ```ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { shouldRewriteToMarkdown } from '@iitdeveloper/agent-content-nextjs';
+import { shouldRewriteToMarkdown } from '@iitdeveloper/agent-content-nextjs/proxy';
 
 export default function proxy(request: NextRequest) {
   const decision = shouldRewriteToMarkdown(request);
@@ -152,13 +152,11 @@ export default function proxy(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  const response = NextResponse.next();
-  if (decision.shouldVaryAccept) {
-    response.headers.append('Vary', 'Accept');
-  }
-  return response;
+  return NextResponse.next();
 }
 ```
+
+> Import from the `/proxy` entry point so Next.js 14/15 Edge `middleware.ts` stays dependency-free. Next.js overwrites `Vary` on its own HTML responses, so if a CDN caches the same URL for both formats, key the cache on `Accept` or use `/page.md` URLs — see [Next.js guide](docs/NEXTJS_INTEGRATION.md#cdn-caching-caveat-vary-accept-on-nextjs-html-pages).
 
 ---
 
@@ -277,7 +275,7 @@ sequenceDiagram
 | **Next.js 15 & 16** | :white_check_mark: Verified | App Router Route Handlers (`GET`, `HEAD`) + `shouldRewriteToMarkdown` | [Next.js Guide](docs/NEXTJS_INTEGRATION.md) |
 | **Next.js 14** | :white_check_mark: Supported | App Router Route Handlers (`GET`, `HEAD`) | [Next.js Guide](docs/NEXTJS_INTEGRATION.md) |
 | **Express / Connect** | :white_check_mark: Verified | `createNodeMiddleware({ content })` | [Node.js Guide](docs/NODE_INTEGRATION.md) |
-| **Hono / Workers / Fetch** | :white_check_mark: Compatible | Web Fetch API `createFetchHandler({ content })` | [Node.js Guide](docs/NODE_INTEGRATION.md) |
+| **Fetch API runtimes (Hono, Bun, Deno)** | :large_orange_diamond: Node-compatible runtimes; not yet tested in CI | Web Fetch API `createFetchHandler({ content })` | [Node.js Guide](docs/NODE_INTEGRATION.md) |
 | **Vanilla HTML / CSS / JS** | :white_check_mark: Verified | `agent-content-cli build` + `<link>` discovery | [Vanilla HTML Guide](docs/integrations/VANILLA_HTML.md) |
 | **Netlify Static Hosting** | :white_check_mark: Configured | `_headers` + Netlify Edge Functions | [Netlify Guide](docs/integrations/NETLIFY.md) |
 | **Vercel Static Hosting** | :white_check_mark: Configured | `vercel.json` header & query rewrites | [Vercel Guide](docs/integrations/VERCEL.md) |

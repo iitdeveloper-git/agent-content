@@ -25,6 +25,8 @@ Vary: Accept
 ```
 This instructs CDNs and browsers to maintain **separate cache entries** for different `Accept` values.
 
+**Framework caveat (Next.js):** Next.js controls the `Vary` header of its own HTML page responses and replaces any value set from `proxy.ts`/`middleware.ts` or `next.config`. AgentContent can only add `Vary: Accept` to the responses it produces itself (Markdown, `llms.txt`, and the Express/Node/Fetch/PHP pass-through paths). When a Next.js app is fronted by a shared cache and serves both formats from one URL, configure the CDN cache key to include `Accept`, or direct agents to `/page.md`. See the [Next.js guide](NEXTJS_INTEGRATION.md#cdn-caching-caveat-vary-accept-on-nextjs-html-pages).
+
 ### 2.2 Dedicated URI Representation (`/page.md` & `?format=md`)
 When a client requests `/pricing.md` or `/pricing?format=md`, the representation is uniquely identified by the URL path/query. In this case:
 - AgentContent **omits** `Vary: Accept`.

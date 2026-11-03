@@ -11,7 +11,7 @@
 
 `@iitdeveloper/agent-content-node` is the official Node.js adapter for **AgentContent**. It provides:
 - **Express / Connect Middleware:** Intercepts requests negotiating Markdown (`Accept: text/markdown`, `.md`, `?format=md`), returning structured Markdown while passing normal browser HTML requests to your existing routes with correct `Vary: Accept` headers.
-- **Web Standard Fetch Handler:** Compatible with modern runtimes (Node 18+, Bun, Deno, Cloudflare Workers, Hono, Fastify).
+- **Web Standard Fetch Handler:** Uses only `Request`/`Response`, but the core engine imports `node:crypto` and `Buffer`: runs on Node 18.18+ (CI matrix: 18, 20, 22); Bun, Deno, Hono, Fastify and Cloudflare Workers (which needs the `nodejs_compat` flag) are expected to work but are **not tested** in CI.
 
 **Zero extra packages required:** Installing `@iitdeveloper/agent-content-node` automatically includes the complete AgentContent engine and re-exports all core functions (`defineAgentContent`, `htmlToMarkdown`, etc.).
 

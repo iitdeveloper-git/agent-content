@@ -1,6 +1,6 @@
 # AgentContent v0.1.0 — Re-Review After Fixes & Package Rename
 
-Date: 2026-11-03 · Tree reviewed: `main` @ `fd9c4eb` (clean working tree, in sync with `origin/main`) · Review-only; nothing modified, published or committed by the reviewer.
+Date: 2026-11-03 · Trees reviewed: `main` @ `fd9c4eb` (§1–§6), `2ef16e8` (§7) and the follow-up fix commit (§8) (clean working tree, in sync with `origin/main`) · Review-only; nothing modified, published or committed by the reviewer.
 Supersedes the status columns of [FINAL_REVIEW_REPORT.md](FINAL_REVIEW_REPORT.md) (kept as the historical first-pass record).
 
 ## Verdict
@@ -90,3 +90,37 @@ Node 18/20 runtime, Next 14, Hono/Workers/Bun/Deno, Windows, large-site performa
 @iitdeveloper/agent-content-cli      → depends on core; bins: agent-content, agent-content-cli
 ```
 Dependencies are `0.1.0` exact after pack (workspace protocol rewritten). Single-command installs are verified. Core remains framework-independent; the adapters' `export *` from core gives the one-package developer experience requested.
+
+---
+
+## 7. Second re-review — `main` @ `2ef16e8`
+
+Verdict at that point: **APPROVED WITH CONDITIONS**. Verified: 112/112 tests; `scripts/verify-tarballs.mjs` passes; real Next.js **14.2.35, 15.5.28 and 16.4.4** apps built from a single `npm i` of the adapter tarball and ran the README recipe correctly (`Accept`, `.md`, `?format=md`, `q=0` → HTML, draft → 404, `/llms.txt`). Fixed since §1–§6: stale package names, Next `q=0`/`?format=md` recipe bug (`shouldRewriteToMarkdown`), resolver errors fail closed, invented token numbers removed, PHP q-values honoured, `version_bump` wired, frozen lockfile, tarball gate in CI. Open items found: (1) `Vary: Accept` never reaches Next HTML responses (static and `force-dynamic`, all three versions); (2) DNS rebinding TOCTOU (stub resolver: public at check, 127.0.0.1 at connect → body returned); (3) npm scope ownership unproven; (4) Edge `middleware.ts` bundles core (116 kB / 174 kB, `dns/promises` warning); (5) parse-stage DoS (20 000 nested `<ul><li>` = 15.7 s; 50 000 nested `<div>` = 26 s); (6) zod advisory; (7) Hono/Workers claim untested; (8) no `engines`/`sideEffects`; (9) `NPM_TOKEN` only; (10) no Next build in CI.
+
+## 8. Resolution of those items (follow-up commit)
+
+| # | Item | Resolution | Evidence |
+| --- | --- | --- | --- |
+| 1 | `Vary: Accept` on Next HTML | **Cannot be fixed inside the app — documented, snippet removed.** Experiments on 16.4.4 showed `next.config` `headers()` and `NextResponse.next({ headers })` are also overwritten by Next. Docs now state the limitation and the two mitigations (Accept-aware CDN cache key, or `/page.md` URLs): `docs/NEXTJS_INTEGRATION.md`, `docs/CACHING.md`, README, adapter README. `shouldVaryAccept` remains available for CDN configuration. | Reviewer experiments A/B/C; docs diff |
+| 2 | DNS rebinding TOCTOU | **FIXED.** `safeFetchUrl` now issues each hop with `node:http(s)` and a pinned `lookup`: one resolution, every address validated, socket connects to the validated address. New test with a flipping resolver and a real local server asserts rejection ("at connect time") and **zero** connections. `docs/SECURITY.md` documents scope/limits (no proxy env vars, injected fetchers, `ssrfProtection:false`). | `security-rebinding.test.ts` |
+| 3 | npm scope ownership | **Cannot be done from the repo.** `docs/RELEASING.md` gives the one-time checklist (verify scope, bootstrap token, enable trusted publishing). **Remains a human release gate.** | `docs/RELEASING.md` |
+| 4 | Edge middleware weight | **FIXED.** New dependency-free `@iitdeveloper/agent-content-nextjs/proxy` entry (imports only core `/negotiation`). Next 15 `middleware` bundle **116 kB → 34.9 kB**, no `dns/promises` warning. `verify-tarballs` asserts the proxy chunk imports nothing heavy (negative control confirmed it fails when it imports the core root). | verify scripts |
+| 5 | Parse-stage DoS | **FIXED.** Linear pre-parse scan rejects nesting > `maxNestingDepth` (512) or > `maxElements` (200 000) in ~0 ms (all three hostile fixtures above now reject instantly); optional-end-tag elements (`<p>`, `<li>`, `<td>`) are not counted so legitimate unclosed markup still converts; unterminated-tag floods are linear. `maxTableRows` configurable; truncation note now renders as emphasis, not escaped asterisks. | 5 new markdown tests |
+| 6 | zod advisory | **FIXED.** `zod@^4.6.6` (4.6.7 resolved); `npm audit` on a clean install of the packed core: **0 vulnerabilities** (was 2 high). | audit output |
+| 7 | Hono/Workers claim | **Corrected.** README/node docs now say: Node tested (CI 18/20/22); Bun/Deno/Hono expected but untested; Workers need `nodejs_compat`. CHANGELOG no longer claims core is Edge-safe. | docs diff |
+| 8 | `engines` / `sideEffects` | **FIXED.** `engines.node >=18.18.0` on all packages, `sideEffects:false` on libraries (not the CLI); `@types/node` moved from runtime `dependencies` to optional peer + dev dependency in the node adapter. | manifests |
+| 9 | `NPM_TOKEN` only | **Improved, one human step remains.** Release now packs with pnpm and publishes with `npm publish <tgz> --provenance` on npm ≥ 11.5.1 (OIDC-capable), tags/commits the bump, and runs both consumer verifications. Trusted publisher must be enabled on npmjs.com after the first (token) publish — see `docs/RELEASING.md`. Workflows were YAML-validated but **not executed**. | `release.yml` |
+| 10 | No Next build in CI | **FIXED.** `scripts/verify-nextjs.mjs` (real app from packed tarballs, build + start + 10 HTTP assertions) runs in CI as a Next 14/15/16 matrix and in the release workflow. Locally passed on 14, 15 and 16. | script runs |
+
+Also: CLI file ordering now uses ordinal comparison (locale-independent); `llms.txt`/`llms-full.txt` verified order-independent.
+
+### Final local verification of the fix commit
+`pnpm typecheck` 0 errors · `pnpm lint` clean · `pnpm build` ok · **123/123 tests**, coverage **79.1 %** (`core/security` 77.7 %) · `verify-tarballs` ✅ (ESM, CJS, TS under nodenext+bundler, `/proxy`, both bins) · `verify-nextjs` ✅ on 14, 15, 16 · packed-core `npm audit`: 0 vulnerabilities.
+
+### Remaining (not code-fixable here)
+1. Confirm ownership of the `@iitdeveloper` npm scope and run the one-time publish bootstrap (`docs/RELEASING.md`).
+2. Hosting guides (Netlify, Vercel, GitHub Pages, Nginx, Apache) and Bun/Deno/Hono/Workers are still unexercised on real hosts/runtimes; Windows and Node 18/20 runtime results come only from CI once it runs.
+3. GitHub Actions workflow changes could only be syntax-validated locally; confirm the first CI run is green (especially the three Next.js matrix jobs and Node 18).
+4. Same-URL `Vary: Accept` negotiation on Next.js HTML behind a shared cache needs the CDN-side cache key described in the docs.
+
+**Verdict after fixes: APPROVED** for a first public release of the code, conditional only on the human release gates above (scope ownership, first green CI run).

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { MarkdownConversionError } from '../src/errors/index.js';
 import { htmlToMarkdown } from '../src/markdown/index.js';
 
 describe('HTML to Markdown Conversion', () => {
@@ -121,15 +122,39 @@ console.log(x);</code></pre>
     expect(md).toContain('| Markdown | Yes |');
   });
 
-  it('handles deeply nested hostile elements without call stack overflow (S-08)', () => {
-    // 5,000 nested divs to verify iterative traversal and safe text extraction
+  it('rejects pathologically nested input before parsing, in near-constant time (S-08)', () => {
+    // 20,000 nested lists (~200 KB) previously took ~16 s inside the parser
+    const hostile = '<ul><li>'.repeat(20000) + 'Content at the bottom';
+    const start = Date.now();
+    expect(() => htmlToMarkdown(hostile)).toThrow(MarkdownConversionError);
+    expect(() => htmlToMarkdown(hostile)).toThrow(/nesting exceeds the maximum depth/);
+    expect(Date.now() - start).toBeLessThan(500);
+  });
+
+  it('still converts legitimately deep documents and honours maxNestingDepth (S-08)', () => {
     let deepHtml = 'Content at the bottom';
-    for (let i = 0; i < 5000; i++) {
+    for (let i = 0; i < 300; i++) {
       deepHtml = `<div>${deepHtml}</div>`;
     }
-    expect(() => htmlToMarkdown(deepHtml)).not.toThrow();
-    const md = htmlToMarkdown(deepHtml);
-    expect(md).toContain('Content at the bottom');
+    expect(htmlToMarkdown(deepHtml)).toContain('Content at the bottom');
+    expect(() => htmlToMarkdown(deepHtml, { maxNestingDepth: 100 })).toThrow(MarkdownConversionError);
+  });
+
+  it('does not count optional-end-tag elements (<p>, <li>, <td>) as nesting (S-08)', () => {
+    const html = '<main>' + '<p>para<ul><li>a<li>b</ul>'.repeat(5000) + '</main>';
+    const md = htmlToMarkdown(html);
+    expect(md).toContain('para');
+  });
+
+  it('rejects inputs with excessive element counts (S-08)', () => {
+    const html = '<span>x</span>'.repeat(1000);
+    expect(() => htmlToMarkdown(html, { maxElements: 500 })).toThrow(/more than 500 elements/);
+  });
+
+  it('does not exhibit quadratic behaviour on unterminated tag floods (S-08)', () => {
+    const start = Date.now();
+    htmlToMarkdown('<a' + '<a'.repeat(200000));
+    expect(Date.now() - start).toBeLessThan(2000);
   });
 
   it('truncates oversized tables to avoid CPU denial of service (S-08)', () => {
@@ -144,6 +169,7 @@ console.log(x);</code></pre>
 
     expect(duration).toBeLessThan(1000); // Must convert quickly (<1s)
     expect(md).toContain('Table truncated');
+    expect(md).not.toContain('\\*Note');
     expect(md).toContain('| 499 | Value 499 |');
     expect(md).not.toContain('| 500 | Value 500 |');
   });
@@ -176,5 +202,12 @@ console.log(x);</code></pre>
     expect(md).toContain('title: About AgentContent');
     expect(md).toContain('description: Developer infrastructure for agents');
     expect(md).toContain('canonical_url: https://example.com/about');
+  });
+
+  it('makes the table row cap configurable via maxTableRows', () => {
+    const rows = Array.from({ length: 20 }, (_, i) => `<tr><td>r${i}</td></tr>`).join('');
+    const md = htmlToMarkdown(`<main><p>${'x'.repeat(60)}</p><table>${rows}</table></main>`, { maxTableRows: 5 });
+    expect(md).toContain('showing first 5 rows');
+    expect(md).not.toContain('r6');
   });
 });

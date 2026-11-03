@@ -42,5 +42,8 @@
     "@iitdeveloper/agent-content": "workspace:*",
     "commander": "^13.1.0",
     "picocolors": "^1.1.1"
+  },
+  "engines": {
+    "node": ">=18.18.0"
   }
 }

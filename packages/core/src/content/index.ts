@@ -44,8 +44,8 @@ export const structuredPageSchema = z.object({
   tags: z.array(z.string()).optional(),
   category: z.string().optional(),
   status: z.enum(['published', 'draft', 'archived']).default('published'),
-  metadata: z.record(z.unknown()).optional(),
-  structuredData: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  structuredData: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**

@@ -46,3 +46,35 @@ jobs:
 
       - name: Validate External Consumer from Packed Tarballs
         run: node scripts/verify-tarballs.mjs
+
+  nextjs:
+    name: Next.js ${{ matrix.next }} consumer (packed tarballs)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        next: ['14', '15', '16']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm run build
+
+      - name: Build and run a real Next.js ${{ matrix.next }} app from the packed tarballs
+        run: NEXT_VERSION=${{ matrix.next }} node scripts/verify-nextjs.mjs

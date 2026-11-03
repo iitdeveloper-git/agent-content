@@ -31,6 +31,53 @@ const DEFAULT_EXCLUDE_SELECTORS = [
 const DEFAULT_MAX_INPUT_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_SAFE_DOM_DEPTH = 128;
 const MAX_TABLE_ROWS = 500;
+/** Nesting depth above which input is rejected before parsing (real-world HTML is far shallower). */
+const DEFAULT_MAX_NESTING_DEPTH = 512;
+/** Opening-tag count above which input is rejected before parsing. */
+const DEFAULT_MAX_ELEMENTS = 200_000;
+
+const VOID_ELEMENTS = new Set([
+  'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
+]);
+/** Elements whose end tag is optional in HTML: they auto-close, so they must not count towards nesting. */
+const OPTIONAL_END_TAG_ELEMENTS = new Set([
+  'html', 'head', 'body', 'p', 'li', 'dt', 'dd', 'tr', 'td', 'th', 'thead', 'tbody', 'tfoot',
+  'colgroup', 'caption', 'option', 'optgroup', 'rt', 'rp',
+]);
+const TAG_PATTERN = /<(\/?)([a-zA-Z][a-zA-Z0-9:-]*)[^<>]*?(\/?)>/g;
+
+/**
+ * Linear-time pre-parse scan that rejects pathological markup (extreme nesting or element counts)
+ * BEFORE it reaches the HTML parser, whose cost on such input is super-linear (Security S-08).
+ * The scan is an approximation: it ignores comments and treats optional-end-tag elements as auto-closing.
+ */
+function assertHtmlComplexity(html: string, maxDepth: number, maxElements: number): void {
+  let depth = 0;
+  let elements = 0;
+  TAG_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = TAG_PATTERN.exec(html)) !== null) {
+    const isClosing = match[1] === '/';
+    const name = (match[2] ?? '').toLowerCase();
+    if (isClosing) {
+      if (depth > 0 && !OPTIONAL_END_TAG_ELEMENTS.has(name) && !VOID_ELEMENTS.has(name)) depth--;
+      continue;
+    }
+    elements++;
+    if (elements > maxElements) {
+      throw new MarkdownConversionError(
+        `HTML input contains more than ${maxElements} elements and was rejected.`
+      );
+    }
+    if (match[3] === '/' || VOID_ELEMENTS.has(name) || OPTIONAL_END_TAG_ELEMENTS.has(name)) continue;
+    depth++;
+    if (depth > maxDepth) {
+      throw new MarkdownConversionError(
+        `HTML input nesting exceeds the maximum depth of ${maxDepth} and was rejected.`
+      );
+    }
+  }
+}
 
 /**
  * Creates and configures a TurndownService instance with agent-optimized rules.
@@ -188,7 +235,7 @@ function capTableRows($: cheerio.CheerioAPI, maxRows = MAX_TABLE_ROWS): void {
     }
 
     if (truncated) {
-      $(tableEl).after(`\n\n*Note: Table truncated (showing first ${maxRows} rows).*\n\n`);
+      $(tableEl).after(`<p><em>Note: Table truncated (showing first ${maxRows} rows).</em></p>`);
     }
   });
 }
@@ -211,6 +258,12 @@ export function htmlToMarkdown(
       `HTML input size exceeds maximum allowable limit of ${maxSize} bytes.`
     );
   }
+
+  assertHtmlComplexity(
+    html,
+    options?.maxNestingDepth ?? DEFAULT_MAX_NESTING_DEPTH,
+    options?.maxElements ?? DEFAULT_MAX_ELEMENTS
+  );
 
   try {
     const $ = cheerio.load(html);
@@ -259,7 +312,7 @@ export function htmlToMarkdown(
 
     // 4. Resource exhaustion defense: Cap DOM depth & table rows (Security S-08)
     capDomDepth($);
-    capTableRows($);
+    capTableRows($, options?.maxTableRows);
 
     // 5. Determine target HTML content without dropping multiple articles
     let targetHtml = '';

@@ -18,11 +18,18 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      '@iitdeveloper/agent-content': resolve(__dirname, 'packages/core/src/index.ts'),
-      '@iitdeveloper/agent-content-nextjs': resolve(__dirname, 'packages/nextjs/src/index.ts'),
-      '@iitdeveloper/agent-content-node': resolve(__dirname, 'packages/node/src/index.ts'),
-      '@iitdeveloper/agent-content-cli': resolve(__dirname, 'packages/cli/src/index.ts'),
-    },
+    // Exact-match aliases so that package subpaths (e.g. '@iitdeveloper/agent-content/negotiation')
+    // resolve to their own source modules instead of being appended to the index path.
+    alias: [
+      {
+        find: /^@iitdeveloper\/agent-content\/(negotiation|markdown|content|metadata|discovery|cache|security|types)$/,
+        replacement: resolve(__dirname, 'packages/core/src/$1/index.ts'),
+      },
+      { find: /^@iitdeveloper\/agent-content-nextjs\/proxy$/, replacement: resolve(__dirname, 'packages/nextjs/src/proxy.ts') },
+      { find: /^@iitdeveloper\/agent-content$/, replacement: resolve(__dirname, 'packages/core/src/index.ts') },
+      { find: /^@iitdeveloper\/agent-content-nextjs$/, replacement: resolve(__dirname, 'packages/nextjs/src/index.ts') },
+      { find: /^@iitdeveloper\/agent-content-node$/, replacement: resolve(__dirname, 'packages/node/src/index.ts') },
+      { find: /^@iitdeveloper\/agent-content-cli$/, replacement: resolve(__dirname, 'packages/cli/src/index.ts') },
+    ],
   },
 });

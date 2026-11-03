@@ -399,7 +399,8 @@ export async function safeFetchUrl(
     }
   }
 
-  // 2. Fetch with manual redirect handling to re-validate each hop
+  // 2. Fetch with manual redirect handling to re-validate each hop. Every hop connects through a
+  //    pinned `lookup` (see pinnedGet) so the address that was validated is the address that is used.
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -409,19 +410,15 @@ export async function safeFetchUrl(
     const maxRedirects = 3;
 
     while (redirectCount <= maxRedirects) {
-      const response = await fetch(currentUrl, {
-        method: 'GET',
-        redirect: 'manual',
+      const response = await pinnedGet(new URL(currentUrl), {
         signal: controller.signal,
-        headers: {
-          'User-Agent': 'AgentContent/0.1.0 (+https://github.com/iitdeveloper-git/agent-content)',
-          Accept: 'text/html, text/markdown;q=0.9, */*;q=0.8',
-        },
+        pin: options?.ssrfProtection !== false,
       });
 
       // Handle redirects manually to inspect target URL
       if (response.status >= 300 && response.status < 400) {
-        const location = response.headers.get('location');
+        response.destroy();
+        const location = firstHeader(response.headers['location']);
         if (!location) {
           throw new SecurityError('Redirect response without Location header.', 400);
         }
@@ -448,44 +445,31 @@ export async function safeFetchUrl(
         continue;
       }
 
-      if (!response.ok) {
+      if (response.status < 200 || response.status >= 300) {
+        response.destroy();
         throw new SecurityError(`Remote request failed with HTTP ${response.status}`, response.status);
       }
 
       // Check Content-Length header if present
-      const contentLengthHeader = response.headers.get('content-length');
+      const contentLengthHeader = firstHeader(response.headers['content-length']);
       if (contentLengthHeader) {
         const len = parseInt(contentLengthHeader, 10);
         if (!isNaN(len) && len > maxBytes) {
+          response.destroy();
           throw new SecurityError(`Response size (${len} bytes) exceeds limit of ${maxBytes} bytes.`, 413);
         }
       }
 
       // Read response body with streaming size enforcement
-      const reader = response.body?.getReader();
-      if (!reader) {
-        const text = await response.text();
-        const textByteLength = new TextEncoder().encode(text).length;
-        if (textByteLength > maxBytes) {
-          throw new SecurityError(`Response exceeds size limit of ${maxBytes} bytes.`, 413);
-        }
-        return text;
-      }
-
       const chunks: Uint8Array[] = [];
       let totalBytes = 0;
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        if (value) {
-          totalBytes += value.length;
-          if (totalBytes > maxBytes) {
-            reader.cancel();
-            throw new SecurityError(`Response size exceeded limit of ${maxBytes} bytes.`, 413);
-          }
-          chunks.push(value);
+      for await (const chunk of response.stream) {
+        totalBytes += chunk.length;
+        if (totalBytes > maxBytes) {
+          response.destroy();
+          throw new SecurityError(`Response size exceeded limit of ${maxBytes} bytes.`, 413);
         }
+        chunks.push(chunk);
       }
 
       // Merge chunks using standard Uint8Array
@@ -509,4 +493,87 @@ export async function safeFetchUrl(
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+function firstHeader(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+interface PinnedResponse {
+  status: number;
+  headers: Record<string, string | string[] | undefined>;
+  stream: AsyncIterable<Uint8Array>;
+  destroy(): void;
+}
+
+/**
+ * Performs a single GET without following redirects. When `pin` is set, name resolution happens
+ * exactly once, inside the socket's own `lookup`: every returned address is validated and the socket
+ * connects to that validated address. This closes the check-then-use gap (DNS rebinding / TOCTOU)
+ * that exists when a hostname is validated separately from the request that resolves it again.
+ */
+async function pinnedGet(
+  url: URL,
+  opts: { signal: AbortSignal; pin: boolean }
+): Promise<PinnedResponse> {
+  const [http, https, dns] = await Promise.all([
+    import('node:http'),
+    import('node:https'),
+    import('node:dns'),
+  ]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pinnedLookup = (hostname: string, lookupOptions: any, callback: any): void => {
+    dns.lookup(hostname, { family: lookupOptions?.family, hints: lookupOptions?.hints, all: true }, (err, addresses) => {
+      if (err) {
+        callback(new SSRFError(`SSRF blocked: DNS resolution failed for "${hostname}": ${err.message}`));
+        return;
+      }
+      if (!addresses || addresses.length === 0) {
+        callback(new SSRFError(`SSRF blocked: DNS resolution returned no addresses for "${hostname}".`));
+        return;
+      }
+      for (const entry of addresses) {
+        const isPrivate = entry.family === 4 ? isPrivateIPv4(entry.address) : isPrivateIPv6(entry.address);
+        if (isPrivate) {
+          callback(
+            new SSRFError(`SSRF blocked: "${hostname}" resolved to private address "${entry.address}" at connect time.`)
+          );
+          return;
+        }
+      }
+      if (lookupOptions?.all) {
+        callback(null, addresses);
+      } else {
+        const first = addresses[0]!;
+        callback(null, first.address, first.family);
+      }
+    });
+  };
+
+  return new Promise<PinnedResponse>((resolve, reject) => {
+    const transport = url.protocol === 'https:' ? https : http;
+    const req = transport.request(
+      url,
+      {
+        method: 'GET',
+        signal: opts.signal,
+        headers: {
+          'User-Agent': 'AgentContent/0.1.0 (+https://github.com/iitdeveloper-git/agent-content)',
+          Accept: 'text/html, text/markdown;q=0.9, */*;q=0.8',
+        },
+        ...(opts.pin ? { lookup: pinnedLookup } : {}),
+      },
+      (res) => {
+        resolve({
+          status: res.statusCode ?? 0,
+          headers: res.headers,
+          stream: res,
+          destroy: () => res.destroy(),
+        });
+      }
+    );
+    req.on('error', reject);
+    req.end();
+  });
 }
