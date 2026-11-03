@@ -12,7 +12,7 @@
 [![npm version](https://img.shields.io/npm/v/@iitdeveloper/agent-content.svg?style=flat-square)](https://www.npmjs.com/package/@iitdeveloper/agent-content)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg?style=flat-square)](https://opensource.org/licenses/Apache-2.0)
 [![TypeScript: 5.x](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Node.js: >=18.18.0](https://img.shields.io/badge/Node.js-%3E%3D18.18.0-339933.svg?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node.js: >=20.18.1](https://img.shields.io/badge/Node.js-%3E%3D20.18.1-339933.svg?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![pnpm: 12.x](https://img.shields.io/badge/pnpm-12.x-F69220.svg?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](CONTRIBUTING.md)
 
@@ -315,7 +315,7 @@ For more details, read our [Security Architecture & Threat Model](docs/SECURITY.
 
 ## 🧪 Testing & Verification
 
-The test suite runs with [Vitest](https://vitest.dev/) across Node.js 18, 20, and 22:
+The test suite runs with [Vitest](https://vitest.dev/) across Node.js 20 and 22:
 
 ```bash
 # Clone the repository

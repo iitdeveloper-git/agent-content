@@ -99,7 +99,7 @@ try {
     if (shouldRewriteToMarkdown(req('text/markdown;q=0, text/html')).rewrite) throw new Error('proxy: q=0 rewritten');
     if (typeof cjs.shouldRewriteToMarkdown !== 'function') throw new Error('proxy CJS export missing');
     // The proxy entry (and the shared chunk it loads) must only import the pure negotiation module.
-    // require.resolve (not import.meta.resolve, which is unavailable on Node 18) locates the package dist directory.
+    // require.resolve (not import.meta.resolve) locates the package dist directory.
     const pkgDir = require.resolve('@iitdeveloper/agent-content-nextjs/proxy').replace(/proxy\\.cjs$/, '');
     const forbidden = /(cheerio|turndown|yaml|zod|node:|^@iitdeveloper[/]agent-content$)/;
     for (const file of ['proxy.js']) {

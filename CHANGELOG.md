@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2026-11-03
 
 ### Added
+- **Requires Node.js >= 20.18.1** (the `cheerio` 1.x / `undici` 7 dependency chain does not run on Node 18; Node 18 is end-of-life). CI covers Node 20 and 22.
 - **Core Engine (`@iitdeveloper/agent-content`)**:
   - Framework-independent (no Next.js/Express/React imports). Requires a Node.js-compatible runtime: the engine uses `node:crypto`, `Buffer` and `node:dns`/`node:http` (SSRF-safe fetch). Only the pure `@iitdeveloper/agent-content/negotiation` subpath is dependency-free and safe for the Edge runtime.
   - HTTP content negotiation parser supporting `Accept: text/markdown`, `?format=md`, and `/page.md`.

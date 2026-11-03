@@ -229,7 +229,7 @@ export function createNodeMiddleware(options: NodeHandlerOptions) {
 }
 
 /**
- * Web Standard Fetch API handler for modern JavaScript runtimes (Node 18+, Bun, Deno, Cloudflare Workers).
+ * Web Standard Fetch API handler for modern JavaScript runtimes (Node 20.18.1+, Bun, Deno, Cloudflare Workers).
  */
 export function createFetchHandler(options: NodeHandlerOptions) {
   const instance: AgentContentInstance =

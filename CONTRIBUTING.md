@@ -13,7 +13,7 @@ All contributors and maintainers are expected to adhere to our [Code of Conduct]
 ## Development Setup
 
 ### Prerequisites
-- **Node.js:** `>= 18.18.0` (Recommended: Node 20 or 22 LTS)
+- **Node.js:** `>= 20.18.1` (Recommended: Node 20 or 22 LTS)
 - **Package Manager:** `pnpm >= 9.0.0`
 - **Git**
 

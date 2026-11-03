@@ -84,7 +84,7 @@ server.listen(3000);
 
 ## 4. Web Fetch API (Hono, Cloudflare Workers, Deno, Bun)
 
-> **Runtime support:** `createFetchHandler` only uses `Request`/`Response`, but the core engine imports `node:crypto` and `Buffer`. It is tested on Node.js (CI matrix 18/20/22). Bun, Deno and Hono are expected to work, and Cloudflare Workers requires the `nodejs_compat` compatibility flag; none of these runtimes are covered by automated tests yet.
+> **Runtime support:** `createFetchHandler` only uses `Request`/`Response`, but the core engine imports `node:crypto` and `Buffer`. It is tested on Node.js (CI matrix 20/22). Bun, Deno and Hono are expected to work, and Cloudflare Workers requires the `nodejs_compat` compatibility flag; none of these runtimes are covered by automated tests yet.
 
 For modern runtimes utilizing standard `Request` and `Response` objects, use `createFetchHandler`:
 

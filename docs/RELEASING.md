@@ -11,7 +11,7 @@ Packages: `@iitdeveloper/agent-content`, `@iitdeveloper/agent-content-nextjs`, `
 
 ## Every release
 
-1. CI is green on `main` (matrix Node 18/20/22 + Next.js 14/15/16 consumer jobs).
+1. CI is green on `main` (matrix Node 20/22 + Next.js 14/15/16 consumer jobs).
 2. Update `CHANGELOG.md`.
 3. Run *Release Packages* (`workflow_dispatch`) with `version_bump` = `patch|minor|major` (`none` publishes the version already in `package.json`).
    The workflow: frozen-lockfile install → bump all packages → typecheck, lint, tests with coverage, build → `scripts/verify-tarballs.mjs` (ESM, CJS, TypeScript declarations, `/proxy` Edge-safety, CLI bins) → `scripts/verify-nextjs.mjs` for Next 14, 15, 16 → `pnpm pack` → `npm publish <tarball> --access public --provenance` → commit, tag `vX.Y.Z`, push.
